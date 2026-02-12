@@ -1,0 +1,625 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Spectrum — Deep Analysis</title>
+<style>
+  :root {
+    --bg: #0B0F1A;
+    --surface: #131829;
+    --surface2: #1A2035;
+    --border: rgba(255,255,255,0.06);
+    --text: #E2E8F0;
+    --text-muted: #94A3B8;
+    --text-faint: #64748B;
+    --accent: #818CF8;
+    --accent2: #A78BFA;
+    --green: #4ADE80;
+    --yellow: #FBBF24;
+    --red: #F87171;
+    --blue: #60A5FA;
+    --sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    --serif: Georgia, 'Times New Roman', serif;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--sans);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* ---- LOADING SCREEN ---- */
+  #loading-screen {
+    position: fixed; inset: 0; z-index: 100;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    background: var(--bg);
+    transition: opacity .6s, visibility .6s;
+  }
+  #loading-screen.hidden { opacity: 0; visibility: hidden; pointer-events: none; }
+
+  .loader-orb {
+    width: 120px; height: 120px; position: relative; margin-bottom: 40px;
+  }
+  .loader-orb::before {
+    content: ''; position: absolute; inset: 0; border-radius: 50%;
+    background: conic-gradient(from 0deg, transparent, var(--accent), var(--accent2), transparent);
+    animation: orb-spin 2s linear infinite;
+  }
+  .loader-orb::after {
+    content: ''; position: absolute; inset: 6px; border-radius: 50%;
+    background: var(--bg);
+  }
+  .loader-glow {
+    position: absolute; inset: -20px; border-radius: 50%;
+    background: radial-gradient(circle, rgba(129,140,248,0.15), transparent 70%);
+    animation: glow-pulse 2s ease-in-out infinite;
+  }
+  .loader-icon {
+    position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
+    z-index: 2; font-size: 28px; color: var(--accent);
+  }
+
+  @keyframes orb-spin { to { transform: rotate(360deg); } }
+  @keyframes glow-pulse { 0%,100% { opacity: .5; transform: scale(1); } 50% { opacity: 1; transform: scale(1.1); } }
+
+  /* Progress bar */
+  .progress-track {
+    width: 280px; height: 3px; border-radius: 2px;
+    background: var(--border); overflow: hidden; margin-bottom: 20px;
+  }
+  .progress-fill {
+    height: 100%; border-radius: 2px; width: 0%;
+    background: linear-gradient(90deg, var(--accent), var(--accent2));
+    transition: width .8s cubic-bezier(.4,0,.2,1);
+  }
+
+  .loader-status {
+    font-size: 13px; color: var(--text-muted); letter-spacing: .5px;
+    min-height: 20px; transition: opacity .3s;
+  }
+  .loader-substatus {
+    font-size: 11px; color: var(--text-faint); margin-top: 6px;
+  }
+
+  /* Floating particles */
+  .particles { position: fixed; inset: 0; pointer-events: none; overflow: hidden; z-index: 99; }
+  .particle {
+    position: absolute; width: 2px; height: 2px; border-radius: 50%;
+    background: var(--accent); opacity: 0;
+    animation: float-up var(--dur) var(--delay) ease-out infinite;
+  }
+  @keyframes float-up {
+    0% { opacity: 0; transform: translateY(0) scale(0); }
+    20% { opacity: .6; transform: scale(1); }
+    100% { opacity: 0; transform: translateY(-100vh) scale(0); }
+  }
+
+  /* ---- RESULTS ---- */
+  #results { display: none; max-width: 760px; margin: 0 auto; padding: 40px 24px 80px; }
+  #results.visible { display: block; animation: fade-in .5s ease; }
+  @keyframes fade-in { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: none; } }
+
+  .result-header {
+    margin-bottom: 32px; padding-bottom: 24px; border-bottom: 1px solid var(--border);
+  }
+  .result-title {
+    font-family: var(--serif); font-size: 22px; font-weight: 600;
+    line-height: 1.35; margin-bottom: 8px; color: var(--text);
+  }
+  .result-meta {
+    font-size: 12px; color: var(--text-faint); display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+  }
+
+  /* Section */
+  .section {
+    margin-bottom: 28px; padding: 20px 24px; border-radius: 12px;
+    background: var(--surface); border: 1px solid var(--border);
+    animation: section-in .4s ease both;
+  }
+  .section:nth-child(2) { animation-delay: .05s; }
+  .section:nth-child(3) { animation-delay: .1s; }
+  .section:nth-child(4) { animation-delay: .15s; }
+  .section:nth-child(5) { animation-delay: .2s; }
+  .section:nth-child(6) { animation-delay: .25s; }
+  @keyframes section-in { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+
+  .section-label {
+    font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 1.2px;
+    color: var(--text-faint); margin-bottom: 12px;
+  }
+
+  /* Badges */
+  .badge {
+    display: inline-flex; align-items: center; gap: 4px;
+    padding: 3px 10px; border-radius: 10px; font-size: 11px; font-weight: 600;
+  }
+
+  /* Lean bar */
+  .lean-bar {
+    height: 6px; border-radius: 3px; position: relative;
+    background: linear-gradient(to right, #7CB3E0, #94A3B8, #D98282);
+  }
+  .lean-dot {
+    position: absolute; top: -5px; width: 16px; height: 16px; border-radius: 50%;
+    background: white; border: 3px solid var(--accent);
+    box-shadow: 0 0 12px rgba(129,140,248,.4); transform: translateX(-8px);
+  }
+
+  /* Claims */
+  .claim-card {
+    padding: 14px 16px; border-radius: 8px; margin-bottom: 10px;
+    background: var(--surface2); border-left: 3px solid var(--text-faint);
+    transition: border-color .2s, background .2s;
+  }
+  .claim-card:hover { background: rgba(255,255,255,.03); }
+  .claim-card.high { border-left-color: var(--red); }
+  .claim-card.medium { border-left-color: var(--yellow); }
+  .claim-card.low { border-left-color: var(--blue); }
+  .claim-card.verified { border-left-color: var(--green); border-left-style: dashed; }
+  .claim-card.neutral { border-left-color: var(--text-faint); border-left-style: dashed; }
+
+  .claim-sentence {
+    font-family: var(--serif); font-size: 14px; line-height: 1.55;
+    color: var(--text); margin-bottom: 8px; font-style: italic;
+  }
+  .claim-explanation {
+    font-size: 13px; color: var(--text-muted); line-height: 1.5; margin-bottom: 8px;
+  }
+  .claim-meta { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+
+  .source-item {
+    display: flex; gap: 6px; align-items: baseline; font-size: 12px; margin-bottom: 4px;
+  }
+  .source-item strong { color: var(--text); }
+  .source-item span { color: var(--text-muted); }
+
+  .data-chip {
+    display: inline-block; padding: 4px 10px; border-radius: 6px; font-size: 12px;
+    background: rgba(96,165,250,.08); color: var(--blue); margin: 2px 4px 2px 0;
+  }
+
+  .gap-item {
+    font-size: 12px; color: var(--yellow); margin-bottom: 3px; padding-left: 4px;
+  }
+
+  /* Polarization gauge */
+  .pol-track {
+    height: 6px; border-radius: 3px; background: rgba(255,255,255,.06);
+    overflow: hidden;
+  }
+  .pol-fill { height: 100%; border-radius: 3px; transition: width .6s ease; }
+
+  /* Hidden bias cards */
+  .bias-card {
+    padding: 12px 16px; border-radius: 8px; margin-bottom: 8px;
+    background: var(--surface2); border: 1px solid var(--border);
+  }
+  .bias-card .assumption { font-family: var(--serif); font-size: 13px; color: var(--text); line-height: 1.5; }
+  .bias-card .location { font-size: 11px; color: var(--text-faint); margin-top: 4px; font-style: italic; }
+
+  .cw-bar { height: 4px; border-radius: 2px; background: rgba(255,255,255,.06); overflow: hidden; }
+  .cw-fill { height: 100%; border-radius: 2px; }
+
+  /* Back button */
+  .back-btn {
+    position: fixed; top: 20px; left: 20px; z-index: 50;
+    padding: 8px 16px; border-radius: 8px; border: 1px solid var(--border);
+    background: var(--surface); color: var(--text-muted); font-family: var(--sans);
+    font-size: 12px; cursor: pointer; transition: all .2s; display: flex; align-items: center; gap: 6px;
+  }
+  .back-btn:hover { background: var(--surface2); color: var(--text); border-color: var(--accent); }
+
+  .error-msg {
+    text-align: center; padding: 60px 20px; color: var(--red); font-size: 14px;
+  }
+</style>
+</head>
+<body>
+
+<!-- Initial loading state (visible immediately) -->
+<div id="init-loading" style="display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;">
+  <div class="loader-orb">
+    <div class="loader-glow"></div>
+    <div class="loader-icon">S</div>
+  </div>
+  <div class="progress-track"><div class="progress-fill" id="init-fill" style="width:5%;"></div></div>
+  <div id="init-status" style="font-size:13px;color:var(--text-muted);margin-top:8px;">Loading article data&#8230;</div>
+</div>
+
+<!-- Top progress strip (shows during deep load after fast results render) -->
+<div id="deep-strip" style="display:none;">
+  <div class="progress-track" style="width:100%;position:fixed;top:0;left:0;z-index:200;border-radius:0;">
+    <div class="progress-fill" id="progress-fill" style="width:0%;"></div>
+  </div>
+  <div id="deep-status" style="position:fixed;top:6px;right:16px;z-index:200;font-size:11px;color:var(--text-faint);font-family:var(--sans);display:flex;align-items:center;gap:6px;">
+    <span style="width:8px;height:8px;border-radius:50%;background:var(--accent);animation:glow-pulse 1.5s ease-in-out infinite;"></span>
+    <span id="deep-status-text">Running deep analysis&#8230;</span>
+  </div>
+</div>
+
+<!-- Results -->
+<div id="results"></div>
+
+<script>
+(function () {
+  var API_BASE = "https://us-central1-ad-infinitum-2eac8.cloudfunctions.net";
+  var initLoading = document.getElementById("init-loading");
+  var initFill = document.getElementById("init-fill");
+  var initStatus = document.getElementById("init-status");
+
+  function hideInitLoader() {
+    if (initLoading) {
+      initLoading.style.transition = "opacity .4s";
+      initLoading.style.opacity = "0";
+      setTimeout(function () { initLoading.style.display = "none"; }, 400);
+    }
+  }
+
+  // ---- Load from storage ----
+  try {
+    chrome.storage.local.get(["deepAnalysisData"], function (result) {
+      try {
+        var data = result.deepAnalysisData;
+        if (!data || !data.articleText) {
+          showError("No article data found. Please try again from the article page.");
+          return;
+        }
+
+        // Phase 1: Render fast analysis immediately
+        if (data.fastAnalysis) {
+          initFill.style.width = "40%";
+          initStatus.textContent = "Rendering quick analysis\u2026";
+          setTimeout(function () {
+            hideInitLoader();
+            renderResults(data, data.fastAnalysis, false);
+            // Phase 2: Fire deep analysis
+            runDeepAnalysis(data, true);
+          }, 200);
+        } else {
+          // No fast analysis — keep loader visible, go straight to deep
+          initFill.style.width = "15%";
+          initStatus.textContent = "Running deep analysis\u2026";
+          runDeepAnalysis(data, false);
+        }
+      } catch (err) {
+        showError("Error loading data: " + err.message);
+      }
+    });
+  } catch (err) {
+    showError("Chrome storage unavailable: " + err.message);
+  }
+
+  function showError(msg) {
+    hideInitLoader();
+    var results = document.getElementById("results");
+    results.innerHTML = '<div class="error-msg">' + esc(msg) + '<br><br><button class="back-btn" onclick="window.close()" style="position:static;display:inline-flex;">Close</button></div>';
+    results.classList.add("visible");
+  }
+
+  // ---- Deep analysis with progress strip ----
+  var stages = [
+    { pct: 12, text: "Sending to comprehensive analyzer" },
+    { pct: 28, text: "Scanning claims & bias patterns" },
+    { pct: 45, text: "Cross-referencing sources" },
+    { pct: 58, text: "Classifying intent & framing" },
+    { pct: 72, text: "Measuring polarization" },
+    { pct: 85, text: "Uncovering hidden assumptions" },
+    { pct: 94, text: "Finalizing deep analysis" },
+  ];
+  var stageIdx = 0, stageTimer;
+
+  function startProgress() {
+    var strip = document.getElementById("deep-strip");
+    strip.style.display = "block";
+    var fill = document.getElementById("progress-fill");
+    var statusText = document.getElementById("deep-status-text");
+    function tick() {
+      if (stageIdx >= stages.length) return;
+      fill.style.width = stages[stageIdx].pct + "%";
+      statusText.textContent = stages[stageIdx].text;
+      stageIdx++;
+      stageTimer = setTimeout(tick, 2200 + Math.random() * 1800);
+    }
+    tick();
+  }
+
+  function endProgress() {
+    clearTimeout(stageTimer);
+    clearInterval(stageTimer);
+    var fill = document.getElementById("progress-fill");
+    fill.style.width = "100%";
+    setTimeout(function () {
+      document.getElementById("deep-strip").style.display = "none";
+    }, 800);
+  }
+
+  async function runDeepAnalysis(data, hasFast) {
+    if (hasFast) {
+      startProgress();
+    } else {
+      // Update init loader with progress stages
+      var sIdx = 0;
+      stageTimer = setInterval(function () {
+        if (sIdx >= stages.length) return;
+        if (initFill) initFill.style.width = stages[sIdx].pct + "%";
+        if (initStatus) initStatus.textContent = stages[sIdx].text;
+        sIdx++;
+      }, 2500);
+    }
+    try {
+      var resp = await fetch(API_BASE + "/analyzeArticle", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          articleText: data.articleText,
+          articleUrl: data.articleUrl,
+          articleTitle: data.articleTitle,
+          sourceDomain: data.sourceDomain,
+          images: data.images || [],
+          mode: "deep",
+        }),
+      });
+      if (!resp.ok) {
+        var errBody = await resp.text();
+        throw new Error("API error " + resp.status + ": " + errBody.slice(0, 100));
+      }
+      var analysis = await resp.json();
+
+      if (hasFast) {
+        endProgress();
+      } else {
+        clearInterval(stageTimer);
+        hideInitLoader();
+      }
+
+      // Re-render with deep data (replaces fast)
+      renderResults(data, analysis, true);
+    } catch (err) {
+      if (hasFast) {
+        endProgress();
+        // Show error inline but keep fast results
+        var notice = document.createElement("div");
+        notice.className = "section";
+        notice.style.borderColor = "rgba(248,113,113,.2)";
+        notice.innerHTML = '<div class="section-label" style="color:var(--red);">Deep Analysis Unavailable</div>' +
+          '<div style="font-size:13px;color:var(--text-muted);">Showing quick analysis. Deep analysis failed: ' + esc(err.message) + '</div>';
+        document.getElementById("results").appendChild(notice);
+      } else {
+        clearInterval(stageTimer);
+        showError("Analysis failed: " + err.message);
+      }
+    }
+  }
+
+  // ---- RENDER ----
+  function renderResults(articleData, a, isDeep) {
+    var results = document.getElementById("results");
+    var html = '';
+
+    html += '<button class="back-btn" onclick="window.close()"><span>\u2190</span> Close</button>';
+
+    // Header
+    var leanLabel = a.overallLean || "Unknown";
+    var depthBadge = isDeep
+      ? '<span class="badge" style="background:linear-gradient(135deg,#6366F1,#8B5CF6);color:#fff;font-size:9px;letter-spacing:.5px;">DEEP ANALYSIS</span>'
+      : '<span class="badge" style="background:rgba(255,255,255,.06);color:var(--text-faint);font-size:9px;letter-spacing:.5px;">QUICK \u2014 DEEP LOADING\u2026</span>';
+    html +=
+      '<div class="result-header">' +
+        '<div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;">' +
+          '<div class="result-title" style="margin-bottom:0;">' + esc(articleData.articleTitle || "Article Analysis") + '</div>' +
+        '</div>' +
+        '<div class="result-meta">' +
+          depthBadge +
+          '<span>Source: ' + esc(articleData.sourceDomain || "Unknown") + '</span>' +
+          '<span>\u00B7</span>' +
+          '<span>Lean: ' + esc(leanLabel) + '</span>' +
+          (a.confidence ? '<span>\u00B7</span><span>Confidence: ' + Math.round(a.confidence * 100) + '%</span>' : '') +
+        '</div>' +
+      '</div>';
+
+    // ---- OVERVIEW ----
+    html += '<div class="section" id="sec-overview">';
+    html += '<div class="section-label">Overview</div>';
+
+    // Lean score bar (deep only has leanScore, fast has overallLean)
+    if (typeof a.leanScore === "number") {
+      var barPct = ((a.leanScore + 1) / 2) * 100;
+      html +=
+        '<div style="margin-bottom:16px;">' +
+          '<div style="display:flex;justify-content:space-between;font-size:11px;color:var(--text-faint);margin-bottom:6px;">' +
+            '<span>Left (-1.0)</span><span>Center</span><span>Right (+1.0)</span>' +
+          '</div>' +
+          '<div class="lean-bar"><div class="lean-dot" style="left:' + barPct + '%;"></div></div>' +
+          '<div style="text-align:center;margin-top:8px;font-size:13px;font-weight:600;color:var(--accent);">' +
+            (a.leanScore > 0 ? "+" : "") + a.leanScore.toFixed(2) +
+          '</div>' +
+        '</div>';
+    }
+
+    // Intent — fast uses intentType string, deep uses intentClassification object
+    var intent = a.intentClassification || {};
+    var intentType = intent.type || a.intentType || "";
+    if (intentType) {
+      var intentColors = { informative: "#4ADE80", advocacy: "#60A5FA", persuasion: "#FBBF24", manipulation: "#F87171" };
+      var ic = intentColors[intentType] || "var(--text-faint)";
+      html +=
+        '<div style="margin-bottom:16px;">' +
+          '<div style="display:flex;align-items:center;gap:10px;margin-bottom:6px;">' +
+            '<span style="font-size:12px;color:var(--text-faint);">Intent</span>' +
+            '<span class="badge" style="background:' + ic + '18;color:' + ic + ';border:1px solid ' + ic + '30;">' +
+              esc(intentType.charAt(0).toUpperCase() + intentType.slice(1)) +
+              (intent.confidence ? ' \u00B7 ' + Math.round(intent.confidence * 100) + '%' : '') +
+            '</span>' +
+          '</div>' +
+          (intent.explanation ? '<div style="font-size:13px;color:var(--text-muted);line-height:1.5;">' + esc(intent.explanation) + '</div>' : '') +
+        '</div>';
+    }
+
+    // Polarization (deep only)
+    if (typeof a.polarizationIntensity === "number") {
+      var pol = a.polarizationIntensity;
+      var polColor = pol > 75 ? "var(--red)" : pol > 50 ? "var(--yellow)" : pol > 20 ? "var(--blue)" : "var(--green)";
+      var polLabel = pol > 75 ? "Extreme" : pol > 50 ? "High" : pol > 20 ? "Moderate" : "Low";
+      html +=
+        '<div>' +
+          '<div style="display:flex;align-items:center;gap:10px;margin-bottom:6px;">' +
+            '<span style="font-size:12px;color:var(--text-faint);">Polarization</span>' +
+            '<span style="font-size:13px;font-weight:600;color:' + polColor + ';">' + polLabel + ' (' + pol + '/100)</span>' +
+          '</div>' +
+          '<div class="pol-track"><div class="pol-fill" style="width:' + pol + '%;background:' + polColor + ';"></div></div>' +
+          (a.polarizationDrivers && a.polarizationDrivers.length ?
+            '<div style="margin-top:8px;">' + a.polarizationDrivers.map(function (d) {
+              return '<div style="font-size:12px;color:var(--text-muted);padding-left:8px;border-left:2px solid ' + polColor + ';margin-bottom:4px;">' + esc(d) + '</div>';
+            }).join('') + '</div>' : '') +
+        '</div>';
+    }
+
+    if (a.sourceBias) {
+      html += '<div style="margin-top:14px;padding-top:12px;border-top:1px solid var(--border);font-size:12px;color:var(--text-faint);line-height:1.5;">' + esc(a.sourceBias) + '</div>';
+    }
+    html += '</div>';
+
+    // ---- CLAIMS ----
+    var claims = a.claims || [];
+    if (claims.length > 0) {
+      html += '<div class="section" id="sec-claims">';
+      html += '<div class="section-label">Claims Analysis (' + claims.length + ' identified)</div>';
+      for (var ci = 0; ci < claims.length; ci++) {
+        html += renderClaim(claims[ci]);
+      }
+      html += '</div>';
+    }
+
+    // ---- BIAS INDICATORS ----
+    var indicators = a.biasIndicators || [];
+    if (indicators.length > 0) {
+      html += '<div class="section" id="sec-bias">';
+      html += '<div class="section-label">Bias Indicators</div>';
+      for (var bi = 0; bi < indicators.length; bi++) {
+        var b = indicators[bi];
+        html +=
+          '<div style="margin-bottom:10px;padding:10px 14px;border-radius:8px;background:var(--surface2);border:1px solid var(--border);">' +
+            '<div style="font-weight:600;color:var(--text);margin-bottom:4px;text-transform:capitalize;font-size:13px;">' +
+              esc((b.pattern || "").replace(/_/g, " ")) + '</div>' +
+            (b.examples ? '<div style="font-style:italic;color:var(--text-muted);font-size:12px;font-family:var(--serif);">\u201C' +
+              b.examples.map(esc).join('\u201D, \u201C') + '\u201D</div>' : '') +
+            (b.explanation ? '<div style="color:var(--text-muted);font-size:12px;margin-top:4px;line-height:1.45;">' + esc(b.explanation) + '</div>' : '') +
+          '</div>';
+      }
+      html += '</div>';
+    }
+
+    // ---- DEEP-ONLY SECTIONS (hidden assumptions, soft bias) ----
+    if (isDeep) {
+      var biases = a.unverbalizedBiases || [];
+      if (biases.length > 0) {
+        html += '<div class="section" id="sec-hidden">';
+        html += '<div class="section-label">Hidden Assumptions</div>';
+        for (var hi = 0; hi < biases.length; hi++) {
+          var hb = biases[hi];
+          var hbColor = hb.biasIntensity === "high" ? "var(--red)" : hb.biasIntensity === "medium" ? "var(--yellow)" : "var(--blue)";
+          html +=
+            '<div class="bias-card">' +
+              '<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">' +
+                '<span class="badge" style="background:' + hbColor + '15;color:' + hbColor + ';">' + esc(hb.biasIntensity || "low") + '</span>' +
+              '</div>' +
+              '<div class="assumption">' + esc(hb.assumption || "") + '</div>' +
+              (hb.reasoningLocation ? '<div class="location">\u201C' + esc(hb.reasoningLocation) + '\u201D</div>' : '') +
+            '</div>';
+        }
+        html += '</div>';
+      }
+
+      var soft = a.softBiasIndicators || [];
+      if (soft.length > 0) {
+        html += '<div class="section" id="sec-soft">';
+        html += '<div class="section-label">Soft Bias Patterns</div>';
+        for (var sbi = 0; sbi < soft.length; sbi++) {
+          var sb = soft[sbi];
+          html +=
+            '<div class="bias-card">' +
+              '<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">' +
+                '<span class="badge" style="background:var(--red)15;color:var(--red);">' + esc((sb.pattern || "").replace(/_/g, " ")) + '</span>' +
+                (sb.target ? '<span style="font-size:12px;color:var(--text-muted);">Target: ' + esc(sb.target) + '</span>' : '') +
+              '</div>' +
+              (sb.examples ? '<div style="font-style:italic;color:var(--text-muted);font-size:12px;font-family:var(--serif);margin-bottom:4px;">\u201C' +
+                sb.examples.map(esc).join('\u201D, \u201C') + '\u201D</div>' : '') +
+              (sb.explanation ? '<div style="font-size:12px;color:var(--text-muted);line-height:1.45;">' + esc(sb.explanation) + '</div>' : '') +
+            '</div>';
+        }
+        html += '</div>';
+      }
+    }
+
+    results.innerHTML = html;
+    results.classList.add("visible");
+  }
+
+  // ---- Claim card renderer (shared) ----
+  function renderClaim(c) {
+    var typeColors = { verified: "var(--green)", neutral: "var(--text-faint)", contentious: "var(--yellow)", misleading: "var(--red)", unsupported: "var(--red)", opinion_as_fact: "var(--yellow)", omission: "var(--blue)" };
+    var tc = typeColors[c.type] || "var(--text-faint)";
+    var cardClass = c.type === "verified" ? "verified" : c.type === "neutral" ? "neutral" : (c.severity || "low");
+    var typeLabel = (c.type === "verified" ? "\u2713 " : "") + (c.type || "").replace(/_/g, " ");
+
+    var h = '<div class="claim-card ' + cardClass + '">';
+    h += '<div class="claim-sentence">\u201C' + esc(c.sentence || "") + '\u201D</div>';
+
+    h += '<div class="claim-meta" style="margin-bottom:8px;">';
+    h += '<span class="badge" style="background:' + tc + '15;color:' + tc + ';">' + esc(typeLabel) + '</span>';
+    h += '<span class="badge" style="background:rgba(255,255,255,.04);color:var(--text-faint);">' + esc((c.severity || "").charAt(0).toUpperCase() + (c.severity || "").slice(1)) + '</span>';
+    if (typeof c.checkWorthiness === "number") {
+      var cwc = c.checkWorthiness > 70 ? "var(--red)" : c.checkWorthiness > 40 ? "var(--yellow)" : "var(--green)";
+      h += '<span style="font-size:11px;color:' + cwc + ';margin-left:auto;">Check-worthiness: ' + c.checkWorthiness + '</span>';
+    }
+    h += '</div>';
+
+    h += '<div class="claim-explanation">' + esc(c.explanation || "") + '</div>';
+
+    // Sources (deep only)
+    var sources = c.sources || [];
+    if (sources.length) {
+      h += '<div style="margin-bottom:8px;">';
+      for (var si = 0; si < sources.length; si++) {
+        h += '<div class="source-item"><span style="color:' + tc + ';">\u25AA</span><strong>' + esc(sources[si].name || "") + '</strong>' +
+          (sources[si].detail ? '<span> \u2014 ' + esc(sources[si].detail) + '</span>' : '') + '</div>';
+      }
+      h += '</div>';
+    }
+
+    // Data points (deep only)
+    var dp = c.dataPoints || [];
+    if (dp.length) {
+      h += '<div style="margin-bottom:8px;">';
+      for (var di = 0; di < dp.length; di++) h += '<span class="data-chip">' + esc(dp[di]) + '</span>';
+      h += '</div>';
+    }
+
+    // Information gaps (deep only)
+    var gaps = c.informationGaps || [];
+    for (var gi = 0; gi < gaps.length; gi++) h += '<div class="gap-item">\u26A0 ' + esc(gaps[gi]) + '</div>';
+
+    // Alt perspectives (deep only)
+    if (c.alternativePerspectives) {
+      h += '<div style="margin-top:8px;padding:8px 12px;border-radius:6px;border-left:2px solid var(--text-faint);background:rgba(255,255,255,.02);font-size:12px;color:var(--text-muted);line-height:1.5;">' +
+        '<strong style="color:var(--text-faint);font-size:10px;text-transform:uppercase;letter-spacing:.5px;">Other Perspectives: </strong>' +
+        esc(c.alternativePerspectives) + '</div>';
+    }
+
+    h += '</div>';
+    return h;
+  }
+
+  function esc(str) {
+    if (!str) return "";
+    return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+  }
+})();
+</script>
+</body>
+</html>

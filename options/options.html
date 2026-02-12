@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Spectrum Settings</title>
+  <link rel="stylesheet" href="options.css">
+</head>
+<body>
+  <div class="options-container">
+    <header class="options-header">
+      <h1 class="options-logo">SPECTRUM</h1>
+      <p class="options-subtitle">Cross-spectrum news bias detection</p>
+    </header>
+
+    <!-- Sensitivity -->
+    <section class="options-section">
+      <h2>Detection Sensitivity</h2>
+      <div class="sensitivity-cards" id="sensitivity-cards">
+        <label class="sensitivity-card" data-value="strict">
+          <input type="radio" name="sensitivity" value="strict">
+          <div class="card-header">
+            <span class="card-icon">&#x1F3AF;</span>
+            <span class="card-title">Strict</span>
+          </div>
+          <p class="card-desc">Only major, well-known news outlets. Lowest false positive rate. Best for focused analysis of mainstream media.</p>
+        </label>
+
+        <label class="sensitivity-card selected" data-value="standard">
+          <input type="radio" name="sensitivity" value="standard" checked>
+          <div class="card-header">
+            <span class="card-icon">&#x2696;</span>
+            <span class="card-title">Standard</span>
+          </div>
+          <p class="card-desc">Major outlets plus pages with news article markup (Schema.org, Open Graph). Good balance of coverage and accuracy.</p>
+        </label>
+
+        <label class="sensitivity-card" data-value="aggressive">
+          <input type="radio" name="sensitivity" value="aggressive">
+          <div class="card-header">
+            <span class="card-icon">&#x1F50D;</span>
+            <span class="card-title">Aggressive</span>
+          </div>
+          <p class="card-desc">Includes heuristic detection on any page. Higher coverage but more false positives. Catches blogs and indie news.</p>
+        </label>
+      </div>
+    </section>
+
+    <!-- Site Management -->
+    <section class="options-section">
+      <h2>Site Management</h2>
+      <div class="site-lists">
+        <div class="site-list">
+          <h3>Always Analyze (Whitelist)</h3>
+          <p class="site-list-desc">Sites that should always be analyzed, even if not auto-detected as news.</p>
+          <div class="site-list-input">
+            <input type="text" id="include-input" placeholder="e.g., example.com">
+            <button id="include-add">Add</button>
+          </div>
+          <ul id="include-list" class="site-tags"></ul>
+        </div>
+
+        <div class="site-list">
+          <h3>Never Analyze (Blacklist)</h3>
+          <p class="site-list-desc">Sites that should never be analyzed, even if detected as news.</p>
+          <div class="site-list-input">
+            <input type="text" id="exclude-input" placeholder="e.g., example.com">
+            <button id="exclude-add">Add</button>
+          </div>
+          <ul id="exclude-list" class="site-tags"></ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- Dashboard Customization -->
+    <section class="options-section">
+      <h2>Dashboard Appearance</h2>
+
+      <div class="option-row">
+        <label>Position</label>
+        <div class="position-toggle" id="position-toggle">
+          <button class="pos-btn selected" data-value="right">Right Side</button>
+          <button class="pos-btn" data-value="bottom">Bottom</button>
+        </div>
+      </div>
+
+      <div class="option-row">
+        <label>Transparency</label>
+        <div class="slider-row">
+          <input type="range" id="transparency-slider" min="50" max="100" value="92">
+          <span id="transparency-value">92%</span>
+        </div>
+      </div>
+
+      <div class="option-row">
+        <label>Width (px)</label>
+        <div class="slider-row">
+          <input type="range" id="width-slider" min="280" max="600" value="380">
+          <span id="width-value">380px</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- Source Transparency -->
+    <section class="options-section">
+      <h2>Monitored Sources</h2>
+      <p class="section-desc">These are the news sources Spectrum monitors, organized by political lean. Classifications are based on media bias research from AllSides, Ad Fontes Media, and Media Bias/Fact Check.</p>
+      <div id="source-list" class="source-list"></div>
+    </section>
+  </div>
+
+  <script src="../shared/constants.js"></script>
+  <script src="../shared/storage.js"></script>
+  <script src="options.js"></script>
+</body>
+</html>
