@@ -34,7 +34,7 @@
     "128": "icons/icon128.png"
   },
   "web_accessible_resources": [{
-    "resources": ["deep-analysis.html", "deep-analysis.js"],
+    "resources": ["deep-analysis.html", "deep-analysis/*"],
     "matches": ["<all_urls>"]
   }]
 }
