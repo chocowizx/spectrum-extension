@@ -382,8 +382,242 @@
   }
 
   // ============================================================
-  // INLINE EXPANSION PANEL — credible, with cited sources
+  // FLOATING CLAIM BUBBLE — concise, positioned next to highlight
   // ============================================================
+  var _bubbleScrollHandler = null;
+  var _bubbleClickOutHandler = null;
+
+  function dismissBubble() {
+    var b = document.getElementById("spectrum-claim-bubble");
+    if (b) {
+      b.style.opacity = "0";
+      b.style.transform = "scale(.96)";
+      setTimeout(function () { if (b.parentNode) b.remove(); }, 180);
+    }
+    if (_bubbleScrollHandler) {
+      window.removeEventListener("scroll", _bubbleScrollHandler, true);
+      _bubbleScrollHandler = null;
+    }
+    if (_bubbleClickOutHandler) {
+      document.removeEventListener("mousedown", _bubbleClickOutHandler, true);
+      _bubbleClickOutHandler = null;
+    }
+  }
+
+  function positionBubble(bubble, wrapper) {
+    var rect = wrapper.getBoundingClientRect();
+    var bw = 330; // bubble width
+    var gap = 10;
+    var vw = window.innerWidth;
+    var vh = window.innerHeight;
+
+    var left, top, arrowSide;
+
+    // Try right of highlight
+    if (rect.right + gap + bw + 12 < vw) {
+      left = rect.right + gap;
+      top = rect.top + rect.height / 2 - 40;
+      arrowSide = "left";
+    // Try left of highlight
+    } else if (rect.left - gap - bw - 12 > 0) {
+      left = rect.left - gap - bw;
+      top = rect.top + rect.height / 2 - 40;
+      arrowSide = "right";
+    // Fall back to below
+    } else {
+      left = Math.max(12, Math.min(rect.left, vw - bw - 12));
+      top = rect.bottom + gap;
+      arrowSide = "top";
+    }
+
+    // Clamp vertical
+    if (top < 12) top = 12;
+    var bh = bubble.offsetHeight || 200;
+    if (top + bh > vh - 12) top = vh - bh - 12;
+
+    bubble.style.left = left + "px";
+    bubble.style.top = top + "px";
+
+    // Position arrow
+    var arrow = bubble.querySelector(".spectrum-bubble-arrow");
+    if (!arrow) return;
+
+    // Reset
+    arrow.style.cssText = "position:absolute;width:0;height:0;";
+    if (arrowSide === "left") {
+      var arrowTop = Math.max(12, Math.min(rect.top + rect.height / 2 - top - 6, bh - 18));
+      arrow.style.left = "-6px";
+      arrow.style.top = arrowTop + "px";
+      arrow.style.borderTop = "6px solid transparent";
+      arrow.style.borderBottom = "6px solid transparent";
+      arrow.style.borderRight = "6px solid rgba(255,255,255,0.95)";
+    } else if (arrowSide === "right") {
+      var arrowTop2 = Math.max(12, Math.min(rect.top + rect.height / 2 - top - 6, bh - 18));
+      arrow.style.right = "-6px";
+      arrow.style.top = arrowTop2 + "px";
+      arrow.style.borderTop = "6px solid transparent";
+      arrow.style.borderBottom = "6px solid transparent";
+      arrow.style.borderLeft = "6px solid rgba(255,255,255,0.95)";
+    } else {
+      arrow.style.top = "-6px";
+      var arrowLeft = Math.max(16, Math.min(rect.left + rect.width / 2 - left - 6, bw - 24));
+      arrow.style.left = arrowLeft + "px";
+      arrow.style.borderLeft = "6px solid transparent";
+      arrow.style.borderRight = "6px solid transparent";
+      arrow.style.borderBottom = "6px solid rgba(255,255,255,0.95)";
+    }
+  }
+
+  function showClaimBubble(wrapper, claim, index) {
+    var color = getClaimColor(claim);
+    var pillBg = getClaimPill(claim);
+    var pillText = getClaimPillText(claim);
+    var typeLabel = (claim.type === "verified" ? "\u2713 " : "") + (claim.type || "").replace(/_/g, " ");
+    var sevLabel = (claim.severity || "").charAt(0).toUpperCase() + (claim.severity || "").slice(1);
+    var panelBorderStyle = (claim.type === "verified" || claim.type === "neutral") ? "dashed" : "solid";
+
+    var bubble = document.createElement("div");
+    bubble.id = "spectrum-claim-bubble";
+    bubble.dataset.idx = String(index);
+    bubble.style.cssText =
+      "position:fixed;z-index:2147483645;width:330px;" +
+      "background:rgba(255,255,255,0.95);backdrop-filter:blur(16px);color:" + TEXT_BODY + ";" +
+      "padding:14px 16px;border-radius:10px;font-family:" + FONT_SANS + ";" +
+      "border:1px solid " + BORDER + ";border-left:3px " + panelBorderStyle + " " + color + ";" +
+      "box-shadow:0 8px 32px rgba(0,0,0,.12),0 2px 8px rgba(0,0,0,.06);" +
+      "opacity:0;transform:scale(.96);transition:opacity .18s ease,transform .18s ease;";
+
+    // Arrow
+    var arrow = document.createElement("div");
+    arrow.className = "spectrum-bubble-arrow";
+    bubble.appendChild(arrow);
+
+    // Header: type + severity + close
+    var headerHtml =
+      '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">' +
+        '<div style="display:flex;align-items:center;gap:6px;">' +
+          '<span style="display:inline-block;padding:2px 8px;border-radius:4px;font-size:10px;' +
+            'font-weight:600;text-transform:uppercase;letter-spacing:.5px;' +
+            'background:' + pillBg + ';color:' + pillText + ';">' + escapeHtml(typeLabel) + '</span>' +
+          '<span style="font-size:10px;color:' + TEXT_FAINT + ';">' + sevLabel + '</span>' +
+        '</div>' +
+        '<span class="spectrum-bubble-x" style="cursor:pointer;color:' + TEXT_FAINT + ';font-size:14px;' +
+          'line-height:1;padding:2px 6px;border-radius:3px;transition:background .15s;">\u00D7</span>' +
+      '</div>';
+
+    // Check-worthiness bar
+    var cwHtml = "";
+    if (typeof claim.checkWorthiness === "number") {
+      var cwScore = claim.checkWorthiness;
+      var cwColor = cwScore > 70 ? "#F87171" : cwScore > 40 ? "#FBBF24" : "#4ADE80";
+      var cwLabel = cwScore > 70 ? "High priority" : cwScore > 40 ? "Worth checking" : "Low priority";
+      cwHtml =
+        '<div style="display:flex;align-items:center;gap:6px;margin-bottom:8px;">' +
+          '<span style="font-size:9px;color:' + TEXT_FAINT + ';white-space:nowrap;">Check-worthy</span>' +
+          '<div style="flex:1;height:3px;border-radius:2px;background:rgba(0,0,0,.06);max-width:80px;">' +
+            '<div style="height:100%;width:' + cwScore + '%;border-radius:2px;background:' + cwColor + ';"></div>' +
+          '</div>' +
+          '<span style="font-size:9px;color:' + cwColor + ';font-weight:600;">' + cwScore + ' \u2014 ' + cwLabel + '</span>' +
+        '</div>';
+    }
+
+    // Explanation
+    var explanationHtml = '<div style="font-size:13px;color:' + TEXT_BODY + ';line-height:1.55;' +
+      'font-family:' + FONT_SERIF + ';">' + escapeHtml(claim.explanation || "") + '</div>';
+
+    // Compact summary: source count, data points, gaps
+    var srcCount = (claim.sources || []).length;
+    var dpCount = (claim.dataPoints || []).length;
+    var gapCount = (claim.informationGaps || []).length;
+    var statsHtml = "";
+    if (srcCount || dpCount || gapCount) {
+      var parts = [];
+      if (srcCount) parts.push(srcCount + " source" + (srcCount > 1 ? "s" : ""));
+      if (dpCount) parts.push(dpCount + " data point" + (dpCount > 1 ? "s" : ""));
+      if (gapCount) parts.push(gapCount + " gap" + (gapCount > 1 ? "s" : ""));
+      statsHtml = '<div style="margin-top:8px;font-size:10px;color:' + TEXT_FAINT + ';">' +
+        parts.join(" \u00B7 ") + ' \u2014 see Full Deep Analysis</div>';
+    }
+
+    // Deep analysis button
+    var deepBtnHtml =
+      '<div style="margin-top:10px;padding-top:8px;border-top:1px solid ' + BORDER + ';">' +
+        '<button class="spectrum-bubble-deep" style="' +
+          'display:flex;align-items:center;justify-content:center;gap:6px;width:100%;' +
+          'background:linear-gradient(135deg,rgba(99,102,241,0.06),rgba(139,92,246,0.06));' +
+          'border:1px solid rgba(99,102,241,0.15);border-radius:6px;color:#818CF8;' +
+          'padding:7px 12px;cursor:pointer;font-size:11px;font-weight:600;' +
+          'font-family:' + FONT_SANS + ';letter-spacing:.3px;transition:all .2s;' +
+        '">\u2728 Full Deep Analysis</button>' +
+      '</div>';
+
+    // Assemble content (insert before arrow)
+    var content = document.createElement("div");
+    content.innerHTML = headerHtml + cwHtml + explanationHtml + statsHtml + deepBtnHtml;
+    bubble.insertBefore(content, arrow);
+
+    document.body.appendChild(bubble);
+
+    // Position then fade in
+    positionBubble(bubble, wrapper);
+    requestAnimationFrame(function () {
+      bubble.style.opacity = "1";
+      bubble.style.transform = "scale(1)";
+    });
+
+    // Close button
+    bubble.querySelector(".spectrum-bubble-x").addEventListener("click", function (ev) {
+      ev.stopPropagation();
+      dismissBubble();
+    });
+
+    // Deep Analysis button
+    bubble.querySelector(".spectrum-bubble-deep").addEventListener("click", function (ev) {
+      ev.stopPropagation();
+      if (!__lastArticleData) return;
+      chrome.runtime.sendMessage({
+        type: "OPEN_DEEP_ANALYSIS",
+        data: {
+          articleText: __lastArticleData.text,
+          articleUrl: __lastArticleData.url || window.location.href,
+          articleTitle: __lastArticleData.title || document.title,
+          sourceDomain: __lastArticleData.domain || window.location.hostname,
+          images: __lastArticleData.images || [],
+          fastAnalysis: __lastAnalysis || null,
+        }
+      }).catch(function () {});
+    });
+    bubble.querySelector(".spectrum-bubble-deep").addEventListener("mouseenter", function () {
+      this.style.background = "linear-gradient(135deg,rgba(99,102,241,0.12),rgba(139,92,246,0.12))";
+      this.style.borderColor = "rgba(99,102,241,0.3)";
+    });
+    bubble.querySelector(".spectrum-bubble-deep").addEventListener("mouseleave", function () {
+      this.style.background = "linear-gradient(135deg,rgba(99,102,241,0.06),rgba(139,92,246,0.06))";
+      this.style.borderColor = "rgba(99,102,241,0.15)";
+    });
+
+    // Reposition on scroll — dismiss if highlight off-screen
+    _bubbleScrollHandler = function () {
+      var r = wrapper.getBoundingClientRect();
+      if (r.bottom < -50 || r.top > window.innerHeight + 50) {
+        dismissBubble();
+      } else {
+        positionBubble(bubble, wrapper);
+      }
+    };
+    window.addEventListener("scroll", _bubbleScrollHandler, true);
+
+    // Click outside to dismiss
+    _bubbleClickOutHandler = function (ev) {
+      if (!bubble.contains(ev.target) && !wrapper.contains(ev.target)) {
+        dismissBubble();
+      }
+    };
+    setTimeout(function () {
+      document.addEventListener("mousedown", _bubbleClickOutHandler, true);
+    }, 50);
+  }
+
   function attachClaimInteraction(wrapper, claim, index) {
     wrapper.addEventListener("mouseenter", function () {
       wrapper.style.background = getClaimBg(claim).replace("0.07", "0.15");
@@ -394,224 +628,13 @@
 
     wrapper.addEventListener("click", function (e) {
       e.stopPropagation();
-      var panelId = "spectrum-panel-" + index;
-      var existing = document.getElementById(panelId);
-
+      var existing = document.getElementById("spectrum-claim-bubble");
       if (existing) {
-        existing.style.maxHeight = "0";
-        existing.style.opacity = "0";
-        existing.style.marginTop = "0";
-        existing.style.marginBottom = "0";
-        existing.style.paddingTop = "0";
-        existing.style.paddingBottom = "0";
-        setTimeout(function () { if (existing.parentNode) existing.remove(); }, 300);
-        return;
+        var wasThisOne = existing.dataset.idx === String(index);
+        dismissBubble();
+        if (wasThisOne) return; // toggle off
       }
-
-      document.querySelectorAll(".spectrum-inline-panel").forEach(function (p) {
-        p.style.maxHeight = "0"; p.style.opacity = "0";
-        setTimeout(function () { if (p.parentNode) p.remove(); }, 300);
-      });
-
-      var parentP = wrapper.closest("p") || wrapper.parentElement;
-      var color = getClaimColor(claim);
-      var pillBg = getClaimPill(claim);
-      var pillText = getClaimPillText(claim);
-      var typeLabel = (claim.type === "verified" ? "\u2713 " : "") + (claim.type || "").replace(/_/g, " ");
-      var sevLabel = (claim.severity || "").charAt(0).toUpperCase() + (claim.severity || "").slice(1);
-
-      var panel = document.createElement("div");
-      panel.id = panelId;
-      panel.className = "spectrum-inline-panel";
-      var panelBorderStyle = (claim.type === "verified" || claim.type === "neutral") ? "dashed" : "solid";
-      panel.style.cssText =
-        "background:" + PANEL_BG + ";backdrop-filter:blur(12px);color:" + TEXT_BODY + ";" +
-        "padding:0 20px;border-radius:8px;margin:0;overflow:hidden;" +
-        "font-family:" + FONT_SERIF + ";font-size:14px;line-height:1.65;" +
-        "border:1px solid " + BORDER + ";border-left:3px " + panelBorderStyle + " " + color + ";" +
-        "box-shadow:0 2px 12px rgba(0,0,0,.06);" +
-        "max-height:0;opacity:0;transition:max-height .35s ease,opacity .3s ease,margin .3s ease,padding .3s ease;";
-
-      // Build sources HTML
-      var sourcesHtml = "";
-      var sources = claim.sources || [];
-      if (sources.length > 0) {
-        sourcesHtml = '<div style="margin-top:12px;padding-top:10px;border-top:1px solid ' + BORDER + ';">' +
-          '<div style="font-family:' + FONT_SANS + ';font-size:10px;font-weight:600;text-transform:uppercase;' +
-            'letter-spacing:.8px;color:' + TEXT_FAINT + ';margin-bottom:6px;">Referenced Sources</div>';
-        for (var s = 0; s < sources.length; s++) {
-          sourcesHtml +=
-            '<div style="display:flex;gap:6px;align-items:baseline;margin-bottom:5px;font-size:13px;">' +
-              '<span style="color:' + color + ';flex-shrink:0;font-size:11px;">\u25AA</span>' +
-              '<span><strong style="color:' + TEXT_HEAD + ';">' + escapeHtml(sources[s].name || "") + '</strong>' +
-              (sources[s].detail ? ' \u2014 <span style="color:' + TEXT_MUTED + ';">' + escapeHtml(sources[s].detail) + '</span>' : '') +
-              '</span>' +
-            '</div>';
-        }
-        sourcesHtml += '</div>';
-      }
-
-      // Build data points HTML
-      var dataHtml = "";
-      var dataPoints = claim.dataPoints || [];
-      if (dataPoints.length > 0) {
-        dataHtml = '<div style="margin-top:10px;padding:10px 12px;border-radius:6px;background:rgba(94,138,180,0.05);border:1px solid rgba(94,138,180,0.08);">' +
-          '<div style="font-family:' + FONT_SANS + ';font-size:10px;font-weight:600;text-transform:uppercase;' +
-            'letter-spacing:.8px;color:' + TEXT_FAINT + ';margin-bottom:5px;">Key Data</div>';
-        for (var d = 0; d < dataPoints.length; d++) {
-          dataHtml += '<div style="font-size:13px;color:' + TEXT_BODY + ';margin-bottom:3px;font-family:' + FONT_SANS + ';">\u2022 ' + escapeHtml(dataPoints[d]) + '</div>';
-        }
-        dataHtml += '</div>';
-      }
-
-      // Build check-worthiness indicator (Upgrade #4)
-      var cwHtml = "";
-      if (typeof claim.checkWorthiness === "number") {
-        var cwScore = claim.checkWorthiness;
-        var cwColor = cwScore > 70 ? "#F87171" : cwScore > 40 ? "#FBBF24" : "#4ADE80";
-        var cwLabel = cwScore > 70 ? "High priority" : cwScore > 40 ? "Worth checking" : "Low priority";
-        cwHtml =
-          '<div style="display:flex;align-items:center;gap:8px;margin-top:8px;font-family:' + FONT_SANS + ';">' +
-            '<span style="font-size:10px;color:' + TEXT_FAINT + ';white-space:nowrap;">Check-worthiness</span>' +
-            '<div style="flex:1;height:4px;border-radius:2px;background:rgba(0,0,0,.06);max-width:100px;">' +
-              '<div style="height:100%;width:' + cwScore + '%;border-radius:2px;background:' + cwColor + ';"></div>' +
-            '</div>' +
-            '<span style="font-size:10px;color:' + cwColor + ';font-weight:600;">' + cwScore + ' \u2014 ' + cwLabel + '</span>' +
-          '</div>';
-      }
-
-      // Build information gaps HTML (Upgrade #4)
-      var gapsHtml = "";
-      var infoGaps = claim.informationGaps || [];
-      if (infoGaps.length > 0) {
-        gapsHtml = '<div style="margin-top:10px;padding:8px 12px;border-radius:6px;background:rgba(251,191,36,0.05);border:1px solid rgba(251,191,36,0.1);">' +
-          '<div style="font-family:' + FONT_SANS + ';font-size:10px;font-weight:600;text-transform:uppercase;' +
-            'letter-spacing:.8px;color:#B8963E;margin-bottom:5px;">Missing Context</div>';
-        for (var g = 0; g < infoGaps.length; g++) {
-          gapsHtml += '<div style="font-size:12px;color:' + TEXT_MUTED + ';margin-bottom:3px;font-family:' + FONT_SANS + ';line-height:1.4;">\u26A0 ' + escapeHtml(infoGaps[g]) + '</div>';
-        }
-        gapsHtml += '</div>';
-      }
-
-      panel.innerHTML =
-        // Header
-        '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;font-family:' + FONT_SANS + ';">' +
-          '<div style="display:flex;align-items:center;gap:8px;">' +
-            '<span style="display:inline-block;padding:2px 8px;border-radius:4px;font-size:10px;' +
-              'font-weight:600;text-transform:uppercase;letter-spacing:.5px;' +
-              'background:' + pillBg + ';color:' + pillText + ';">' + escapeHtml(typeLabel) + '</span>' +
-            '<span style="font-size:11px;color:' + TEXT_FAINT + ';">' + sevLabel + ' severity</span>' +
-          '</div>' +
-          '<span class="spectrum-panel-close" style="cursor:pointer;color:' + TEXT_FAINT + ';font-size:16px;line-height:1;padding:2px 6px;border-radius:4px;transition:background .15s;"' +
-            ' onmouseenter="this.style.background=\'rgba(0,0,0,.05)\'" onmouseleave="this.style.background=\'transparent\'">\u00D7</span>' +
-        '</div>' +
-        // Check-worthiness bar (Upgrade #4)
-        cwHtml +
-        // Explanation (serif, readable)
-        '<div style="color:' + TEXT_BODY + ';margin-bottom:6px;">' + escapeHtml(claim.explanation || "") + '</div>' +
-        // Sources
-        sourcesHtml +
-        // Data points
-        dataHtml +
-        // Information gaps (Upgrade #4)
-        gapsHtml +
-        // Alternative perspectives
-        (claim.alternativePerspectives ?
-          '<div style="margin-top:12px;padding:10px 12px;border-radius:6px;border-left:2px solid ' + LEAN_COLORS.center + ';background:rgba(148,163,184,0.05);">' +
-            '<div style="font-family:' + FONT_SANS + ';font-size:10px;font-weight:600;text-transform:uppercase;' +
-              'letter-spacing:.8px;color:' + TEXT_FAINT + ';margin-bottom:4px;">Other Perspectives</div>' +
-            '<div style="font-size:13px;color:' + TEXT_MUTED + ';line-height:1.55;">' + escapeHtml(claim.alternativePerspectives) + '</div>' +
-          '</div>' : '') +
-        // Perspectives — auto-load on open
-        '<div class="spectrum-persp-section" style="margin-top:12px;">' +
-          '<div class="spectrum-persp-loading" style="display:flex;align-items:center;gap:8px;padding:10px 0;font-family:' + FONT_SANS + ';font-size:12px;color:' + TEXT_FAINT + ';">' +
-            '<span class="spectrum-spinner" style="display:inline-block;width:14px;height:14px;border:2px solid ' + BORDER + ';border-top-color:' + color + ';border-radius:50%;animation:spectrum-spin .8s linear infinite;"></span>' +
-            'Loading deeper analysis\u2026' +
-          '</div>' +
-          '<div class="spectrum-persp-body" style="display:none;margin-top:12px;"></div>' +
-        '</div>' +
-        // Deep Analysis button
-        '<div style="margin-top:10px;padding-top:10px;border-top:1px solid ' + BORDER + ';">' +
-          '<button class="spectrum-deep-btn" style="' +
-            'display:flex;align-items:center;justify-content:center;gap:8px;width:100%;' +
-            'background:linear-gradient(135deg,rgba(99,102,241,0.08),rgba(139,92,246,0.08));' +
-            'border:1px solid rgba(99,102,241,0.2);border-radius:8px;color:#818CF8;' +
-            'padding:10px 14px;cursor:pointer;font-size:12px;font-weight:600;' +
-            'font-family:' + FONT_SANS + ';letter-spacing:.3px;transition:all .2s;' +
-          '" onmouseenter="this.style.background=\'linear-gradient(135deg,rgba(99,102,241,0.14),rgba(139,92,246,0.14))\';this.style.borderColor=\'rgba(99,102,241,0.35)\'"' +
-          ' onmouseleave="this.style.background=\'linear-gradient(135deg,rgba(99,102,241,0.08),rgba(139,92,246,0.08))\';this.style.borderColor=\'rgba(99,102,241,0.2)\'"' +
-          '><span style="font-size:14px;">\u2728</span> Full Deep Analysis</button>' +
-        '</div>';
-
-      if (parentP.nextSibling) {
-        parentP.parentNode.insertBefore(panel, parentP.nextSibling);
-      } else {
-        parentP.parentNode.appendChild(panel);
-      }
-
-      requestAnimationFrame(function () {
-        panel.style.maxHeight = "3000px";
-        panel.style.opacity = "1";
-        panel.style.marginTop = "14px";
-        panel.style.marginBottom = "14px";
-        panel.style.paddingTop = "16px";
-        panel.style.paddingBottom = "16px";
-      });
-
-      panel.querySelector(".spectrum-panel-close").addEventListener("click", function () {
-        panel.style.maxHeight = "0"; panel.style.opacity = "0";
-        panel.style.marginTop = "0"; panel.style.marginBottom = "0";
-        panel.style.paddingTop = "0"; panel.style.paddingBottom = "0";
-        setTimeout(function () { if (panel.parentNode) panel.remove(); }, 300);
-      });
-
-      // Auto-load factual context when panel opens
-      (function () {
-        var loading = panel.querySelector(".spectrum-persp-loading");
-        var body = panel.querySelector(".spectrum-persp-body");
-        chrome.runtime.sendMessage(
-          { type: "GET_PERSPECTIVES", data: { claim: claim.sentence, topicSlug: claim.relatedTopic, mode: "context" } },
-          function (resp) {
-            if (loading) loading.style.display = "none";
-            body.style.display = "block";
-            if (chrome.runtime.lastError || !resp) {
-              body.innerHTML = '<div style="color:' + SEV_COLOR.high + ';font-family:' + FONT_SANS + ';font-size:12px;">Could not load context.</div>';
-              return;
-            }
-            if (resp.error) {
-              body.innerHTML = '<div style="color:' + SEV_COLOR.high + ';font-family:' + FONT_SANS + ';font-size:12px;">' + escapeHtml(resp.error) + '</div>';
-              return;
-            }
-            if (resp.dataSource === "factual_context") {
-              renderFactualContext(body, resp);
-            } else {
-              renderPerspectives(body, resp);
-            }
-            panel.style.maxHeight = "6000px";
-          }
-        );
-      })();
-
-      // Deep Analysis button handler
-      panel.querySelector(".spectrum-deep-btn").addEventListener("click", function (ev) {
-        ev.stopPropagation();
-        if (!__lastArticleData) {
-          alert("Article data not available. Please reload the page.");
-          return;
-        }
-        // Send data to background, which opens the page
-        chrome.runtime.sendMessage({
-          type: "OPEN_DEEP_ANALYSIS",
-          data: {
-            articleText: __lastArticleData.text,
-            articleUrl: __lastArticleData.url || window.location.href,
-            articleTitle: __lastArticleData.title || document.title,
-            sourceDomain: __lastArticleData.domain || window.location.hostname,
-            images: __lastArticleData.images || [],
-            fastAnalysis: __lastAnalysis || null,
-          }
-        }).catch(function () {});
-      });
+      showClaimBubble(wrapper, claim, index);
     });
   }
 
@@ -1146,6 +1169,7 @@
     var polarization = document.getElementById("spectrum-polarization");
     if (polarization) polarization.remove();
     document.querySelectorAll(".spectrum-inline-panel").forEach(function (p) { p.remove(); });
+    dismissBubble();
     var sidebar = document.getElementById("spectrum-margin-sidebar");
     if (sidebar) sidebar.remove();
     marginNotes = [];
