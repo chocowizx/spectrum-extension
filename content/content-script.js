@@ -536,24 +536,30 @@
       if (dpCount) parts.push(dpCount + " data point" + (dpCount > 1 ? "s" : ""));
       if (gapCount) parts.push(gapCount + " gap" + (gapCount > 1 ? "s" : ""));
       statsHtml = '<div style="margin-top:8px;font-size:10px;color:' + TEXT_FAINT + ';">' +
-        parts.join(" \u00B7 ") + ' \u2014 see Full Deep Analysis</div>';
+        parts.join(" \u00B7 ") + '</div>';
     }
 
-    // Deep analysis button
-    var deepBtnHtml =
-      '<div style="margin-top:10px;padding-top:8px;border-top:1px solid ' + BORDER + ';">' +
+    // Action buttons
+    var btnRowHtml =
+      '<div style="margin-top:10px;padding-top:8px;border-top:1px solid ' + BORDER + ';display:flex;gap:6px;">' +
+        '<button class="spectrum-bubble-expand" style="' +
+          'flex:1;display:flex;align-items:center;justify-content:center;gap:5px;' +
+          'background:rgba(0,0,0,.03);border:1px solid ' + BORDER + ';border-radius:6px;' +
+          'color:' + TEXT_BODY + ';padding:7px 10px;cursor:pointer;font-size:11px;font-weight:600;' +
+          'font-family:' + FONT_SANS + ';transition:all .15s;' +
+        '">\u25BC View Details</button>' +
         '<button class="spectrum-bubble-deep" style="' +
-          'display:flex;align-items:center;justify-content:center;gap:6px;width:100%;' +
+          'flex:1;display:flex;align-items:center;justify-content:center;gap:5px;' +
           'background:linear-gradient(135deg,rgba(99,102,241,0.06),rgba(139,92,246,0.06));' +
           'border:1px solid rgba(99,102,241,0.15);border-radius:6px;color:#818CF8;' +
-          'padding:7px 12px;cursor:pointer;font-size:11px;font-weight:600;' +
-          'font-family:' + FONT_SANS + ';letter-spacing:.3px;transition:all .2s;' +
-        '">\u2728 Full Deep Analysis</button>' +
+          'padding:7px 10px;cursor:pointer;font-size:11px;font-weight:600;' +
+          'font-family:' + FONT_SANS + ';letter-spacing:.3px;transition:all .15s;' +
+        '">\u2728 Deep Analysis</button>' +
       '</div>';
 
     // Assemble content (insert before arrow)
     var content = document.createElement("div");
-    content.innerHTML = headerHtml + cwHtml + explanationHtml + statsHtml + deepBtnHtml;
+    content.innerHTML = headerHtml + cwHtml + explanationHtml + statsHtml + btnRowHtml;
     bubble.insertBefore(content, arrow);
 
     document.body.appendChild(bubble);
@@ -596,6 +602,19 @@
       this.style.borderColor = "rgba(99,102,241,0.15)";
     });
 
+    // View Details — expand inline panel below paragraph
+    bubble.querySelector(".spectrum-bubble-expand").addEventListener("click", function (ev) {
+      ev.stopPropagation();
+      dismissBubble();
+      expandInlinePanel(wrapper, claim, index);
+    });
+    bubble.querySelector(".spectrum-bubble-expand").addEventListener("mouseenter", function () {
+      this.style.background = "rgba(0,0,0,.06)";
+    });
+    bubble.querySelector(".spectrum-bubble-expand").addEventListener("mouseleave", function () {
+      this.style.background = "rgba(0,0,0,.03)";
+    });
+
     // Reposition on scroll — dismiss if highlight off-screen
     _bubbleScrollHandler = function () {
       var r = wrapper.getBoundingClientRect();
@@ -616,6 +635,224 @@
     setTimeout(function () {
       document.addEventListener("mousedown", _bubbleClickOutHandler, true);
     }, 50);
+  }
+
+  // ============================================================
+  // INLINE EXPANSION PANEL — full details below paragraph
+  // ============================================================
+  function expandInlinePanel(wrapper, claim, index) {
+    var panelId = "spectrum-panel-" + index;
+    var existing = document.getElementById(panelId);
+    if (existing) {
+      existing.style.maxHeight = "0"; existing.style.opacity = "0";
+      existing.style.marginTop = "0"; existing.style.marginBottom = "0";
+      existing.style.paddingTop = "0"; existing.style.paddingBottom = "0";
+      setTimeout(function () { if (existing.parentNode) existing.remove(); }, 300);
+      return;
+    }
+
+    // Close any other open panels
+    document.querySelectorAll(".spectrum-inline-panel").forEach(function (p) {
+      p.style.maxHeight = "0"; p.style.opacity = "0";
+      setTimeout(function () { if (p.parentNode) p.remove(); }, 300);
+    });
+
+    var parentP = wrapper.closest("p") || wrapper.parentElement;
+    var color = getClaimColor(claim);
+    var pillBg = getClaimPill(claim);
+    var pillText = getClaimPillText(claim);
+    var typeLabel = (claim.type === "verified" ? "\u2713 " : "") + (claim.type || "").replace(/_/g, " ");
+    var sevLabel = (claim.severity || "").charAt(0).toUpperCase() + (claim.severity || "").slice(1);
+    var panelBorderStyle = (claim.type === "verified" || claim.type === "neutral") ? "dashed" : "solid";
+
+    var panel = document.createElement("div");
+    panel.id = panelId;
+    panel.className = "spectrum-inline-panel";
+    panel.style.cssText =
+      "background:" + PANEL_BG + ";backdrop-filter:blur(12px);color:" + TEXT_BODY + ";" +
+      "padding:0 20px;border-radius:8px;margin:0;overflow:hidden;" +
+      "font-family:" + FONT_SERIF + ";font-size:14px;line-height:1.65;" +
+      "border:1px solid " + BORDER + ";border-left:3px " + panelBorderStyle + " " + color + ";" +
+      "box-shadow:0 2px 12px rgba(0,0,0,.06);" +
+      "max-height:0;opacity:0;transition:max-height .35s ease,opacity .3s ease,margin .3s ease,padding .3s ease;";
+
+    // Sources
+    var sourcesHtml = "";
+    var sources = claim.sources || [];
+    if (sources.length > 0) {
+      sourcesHtml = '<div style="margin-top:12px;padding-top:10px;border-top:1px solid ' + BORDER + ';">' +
+        '<div style="font-family:' + FONT_SANS + ';font-size:10px;font-weight:600;text-transform:uppercase;' +
+          'letter-spacing:.8px;color:' + TEXT_FAINT + ';margin-bottom:6px;">Referenced Sources</div>';
+      for (var s = 0; s < sources.length; s++) {
+        sourcesHtml +=
+          '<div style="display:flex;gap:6px;align-items:baseline;margin-bottom:5px;font-size:13px;">' +
+            '<span style="color:' + color + ';flex-shrink:0;font-size:11px;">\u25AA</span>' +
+            '<span><strong style="color:' + TEXT_HEAD + ';">' + escapeHtml(sources[s].name || "") + '</strong>' +
+            (sources[s].detail ? ' \u2014 <span style="color:' + TEXT_MUTED + ';">' + escapeHtml(sources[s].detail) + '</span>' : '') +
+            '</span></div>';
+      }
+      sourcesHtml += '</div>';
+    }
+
+    // Data points
+    var dataHtml = "";
+    var dataPoints = claim.dataPoints || [];
+    if (dataPoints.length > 0) {
+      dataHtml = '<div style="margin-top:10px;padding:10px 12px;border-radius:6px;background:rgba(94,138,180,0.05);border:1px solid rgba(94,138,180,0.08);">' +
+        '<div style="font-family:' + FONT_SANS + ';font-size:10px;font-weight:600;text-transform:uppercase;' +
+          'letter-spacing:.8px;color:' + TEXT_FAINT + ';margin-bottom:5px;">Key Data</div>';
+      for (var d = 0; d < dataPoints.length; d++) {
+        dataHtml += '<div style="font-size:13px;color:' + TEXT_BODY + ';margin-bottom:3px;font-family:' + FONT_SANS + ';">\u2022 ' + escapeHtml(dataPoints[d]) + '</div>';
+      }
+      dataHtml += '</div>';
+    }
+
+    // Check-worthiness
+    var cwHtml = "";
+    if (typeof claim.checkWorthiness === "number") {
+      var cwScore = claim.checkWorthiness;
+      var cwColor = cwScore > 70 ? "#F87171" : cwScore > 40 ? "#FBBF24" : "#4ADE80";
+      var cwLabel = cwScore > 70 ? "High priority" : cwScore > 40 ? "Worth checking" : "Low priority";
+      cwHtml =
+        '<div style="display:flex;align-items:center;gap:8px;margin-top:8px;font-family:' + FONT_SANS + ';">' +
+          '<span style="font-size:10px;color:' + TEXT_FAINT + ';white-space:nowrap;">Check-worthiness</span>' +
+          '<div style="flex:1;height:4px;border-radius:2px;background:rgba(0,0,0,.06);max-width:100px;">' +
+            '<div style="height:100%;width:' + cwScore + '%;border-radius:2px;background:' + cwColor + ';"></div>' +
+          '</div>' +
+          '<span style="font-size:10px;color:' + cwColor + ';font-weight:600;">' + cwScore + ' \u2014 ' + cwLabel + '</span>' +
+        '</div>';
+    }
+
+    // Information gaps
+    var gapsHtml = "";
+    var infoGaps = claim.informationGaps || [];
+    if (infoGaps.length > 0) {
+      gapsHtml = '<div style="margin-top:10px;padding:8px 12px;border-radius:6px;background:rgba(251,191,36,0.05);border:1px solid rgba(251,191,36,0.1);">' +
+        '<div style="font-family:' + FONT_SANS + ';font-size:10px;font-weight:600;text-transform:uppercase;' +
+          'letter-spacing:.8px;color:#B8963E;margin-bottom:5px;">Missing Context</div>';
+      for (var g = 0; g < infoGaps.length; g++) {
+        gapsHtml += '<div style="font-size:12px;color:' + TEXT_MUTED + ';margin-bottom:3px;font-family:' + FONT_SANS + ';line-height:1.4;">\u26A0 ' + escapeHtml(infoGaps[g]) + '</div>';
+      }
+      gapsHtml += '</div>';
+    }
+
+    panel.innerHTML =
+      '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;font-family:' + FONT_SANS + ';">' +
+        '<div style="display:flex;align-items:center;gap:8px;">' +
+          '<span style="display:inline-block;padding:2px 8px;border-radius:4px;font-size:10px;' +
+            'font-weight:600;text-transform:uppercase;letter-spacing:.5px;' +
+            'background:' + pillBg + ';color:' + pillText + ';">' + escapeHtml(typeLabel) + '</span>' +
+          '<span style="font-size:11px;color:' + TEXT_FAINT + ';">' + sevLabel + ' severity</span>' +
+        '</div>' +
+        '<span class="spectrum-panel-close" style="cursor:pointer;color:' + TEXT_FAINT + ';font-size:16px;line-height:1;padding:2px 6px;border-radius:4px;transition:background .15s;">\u00D7</span>' +
+      '</div>' +
+      cwHtml +
+      '<div style="color:' + TEXT_BODY + ';margin-bottom:6px;">' + escapeHtml(claim.explanation || "") + '</div>' +
+      sourcesHtml +
+      dataHtml +
+      gapsHtml +
+      (claim.alternativePerspectives ?
+        '<div style="margin-top:12px;padding:10px 12px;border-radius:6px;border-left:2px solid ' + LEAN_COLORS.center + ';background:rgba(148,163,184,0.05);">' +
+          '<div style="font-family:' + FONT_SANS + ';font-size:10px;font-weight:600;text-transform:uppercase;' +
+            'letter-spacing:.8px;color:' + TEXT_FAINT + ';margin-bottom:4px;">Other Perspectives</div>' +
+          '<div style="font-size:13px;color:' + TEXT_MUTED + ';line-height:1.55;">' + escapeHtml(claim.alternativePerspectives) + '</div>' +
+        '</div>' : '') +
+      '<div class="spectrum-persp-section" style="margin-top:12px;">' +
+        '<div class="spectrum-persp-loading" style="display:flex;align-items:center;gap:8px;padding:10px 0;font-family:' + FONT_SANS + ';font-size:12px;color:' + TEXT_FAINT + ';">' +
+          '<span class="spectrum-spinner" style="display:inline-block;width:14px;height:14px;border:2px solid ' + BORDER + ';border-top-color:' + color + ';border-radius:50%;animation:spectrum-spin .8s linear infinite;"></span>' +
+          'Loading deeper analysis\u2026' +
+        '</div>' +
+        '<div class="spectrum-persp-body" style="display:none;margin-top:12px;"></div>' +
+      '</div>' +
+      '<div style="margin-top:10px;padding-top:10px;border-top:1px solid ' + BORDER + ';">' +
+        '<button class="spectrum-deep-btn" style="' +
+          'display:flex;align-items:center;justify-content:center;gap:8px;width:100%;' +
+          'background:linear-gradient(135deg,rgba(99,102,241,0.08),rgba(139,92,246,0.08));' +
+          'border:1px solid rgba(99,102,241,0.2);border-radius:8px;color:#818CF8;' +
+          'padding:10px 14px;cursor:pointer;font-size:12px;font-weight:600;' +
+          'font-family:' + FONT_SANS + ';letter-spacing:.3px;transition:all .2s;' +
+        '">\u2728 Full Deep Analysis</button>' +
+      '</div>';
+
+    if (parentP.nextSibling) {
+      parentP.parentNode.insertBefore(panel, parentP.nextSibling);
+    } else {
+      parentP.parentNode.appendChild(panel);
+    }
+
+    requestAnimationFrame(function () {
+      panel.style.maxHeight = "3000px";
+      panel.style.opacity = "1";
+      panel.style.marginTop = "14px";
+      panel.style.marginBottom = "14px";
+      panel.style.paddingTop = "16px";
+      panel.style.paddingBottom = "16px";
+    });
+
+    panel.querySelector(".spectrum-panel-close").addEventListener("click", function () {
+      panel.style.maxHeight = "0"; panel.style.opacity = "0";
+      panel.style.marginTop = "0"; panel.style.marginBottom = "0";
+      panel.style.paddingTop = "0"; panel.style.paddingBottom = "0";
+      setTimeout(function () { if (panel.parentNode) panel.remove(); }, 300);
+    });
+    panel.querySelector(".spectrum-panel-close").addEventListener("mouseenter", function () {
+      this.style.background = "rgba(0,0,0,.05)";
+    });
+    panel.querySelector(".spectrum-panel-close").addEventListener("mouseleave", function () {
+      this.style.background = "transparent";
+    });
+
+    // Auto-load factual context
+    (function () {
+      var loading = panel.querySelector(".spectrum-persp-loading");
+      var body = panel.querySelector(".spectrum-persp-body");
+      chrome.runtime.sendMessage(
+        { type: "GET_PERSPECTIVES", data: { claim: claim.sentence, topicSlug: claim.relatedTopic, mode: "context" } },
+        function (resp) {
+          if (loading) loading.style.display = "none";
+          body.style.display = "block";
+          if (chrome.runtime.lastError || !resp) {
+            body.innerHTML = '<div style="color:' + SEV_COLOR.high + ';font-family:' + FONT_SANS + ';font-size:12px;">Could not load context.</div>';
+            return;
+          }
+          if (resp.error) {
+            body.innerHTML = '<div style="color:' + SEV_COLOR.high + ';font-family:' + FONT_SANS + ';font-size:12px;">' + escapeHtml(resp.error) + '</div>';
+            return;
+          }
+          if (resp.dataSource === "factual_context") {
+            renderFactualContext(body, resp);
+          } else {
+            renderPerspectives(body, resp);
+          }
+          panel.style.maxHeight = "6000px";
+        }
+      );
+    })();
+
+    // Deep Analysis button
+    panel.querySelector(".spectrum-deep-btn").addEventListener("click", function (ev) {
+      ev.stopPropagation();
+      if (!__lastArticleData) return;
+      chrome.runtime.sendMessage({
+        type: "OPEN_DEEP_ANALYSIS",
+        data: {
+          articleText: __lastArticleData.text,
+          articleUrl: __lastArticleData.url || window.location.href,
+          articleTitle: __lastArticleData.title || document.title,
+          sourceDomain: __lastArticleData.domain || window.location.hostname,
+          images: __lastArticleData.images || [],
+          fastAnalysis: __lastAnalysis || null,
+        }
+      }).catch(function () {});
+    });
+    panel.querySelector(".spectrum-deep-btn").addEventListener("mouseenter", function () {
+      this.style.background = "linear-gradient(135deg,rgba(99,102,241,0.14),rgba(139,92,246,0.14))";
+      this.style.borderColor = "rgba(99,102,241,0.35)";
+    });
+    panel.querySelector(".spectrum-deep-btn").addEventListener("mouseleave", function () {
+      this.style.background = "linear-gradient(135deg,rgba(99,102,241,0.08),rgba(139,92,246,0.08))";
+      this.style.borderColor = "rgba(99,102,241,0.2)";
+    });
   }
 
   function attachClaimInteraction(wrapper, claim, index) {
