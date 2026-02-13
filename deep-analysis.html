@@ -370,6 +370,55 @@
   }
   .citations-footer a:hover { color: var(--accent2); }
 
+  /* ---- GLOSSARY / HOW IT WORKS ---- */
+  .glossary-section {
+    margin-top: 36px; padding: 28px 24px 24px; border-radius: 12px;
+    background: var(--surface); border: 1px solid rgba(129,140,248,.08);
+    animation: citations-in .8s ease both;
+    animation-delay: .3s;
+  }
+  .glossary-header {
+    font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 1.4px;
+    color: var(--accent); margin-bottom: 6px; display: flex; align-items: center; gap: 8px;
+  }
+  .glossary-header::before {
+    content: '\2699'; font-size: 14px;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  }
+  .glossary-sub {
+    font-size: 11px; color: var(--text-faint); margin-bottom: 20px; line-height: 1.5;
+  }
+  .glossary-grid {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 10px;
+  }
+  @media (max-width: 600px) {
+    .glossary-grid { grid-template-columns: 1fr; }
+  }
+  .glossary-card {
+    padding: 14px 16px; border-radius: 10px;
+    background: var(--surface2); border: 1px solid var(--border);
+    transition: border-color .2s;
+  }
+  .glossary-card:hover { border-color: rgba(129,140,248,.2); }
+  .glossary-card-name {
+    font-size: 12px; font-weight: 700; color: var(--text); margin-bottom: 6px;
+    display: flex; align-items: center; gap: 8px;
+  }
+  .glossary-dot {
+    width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0;
+  }
+  .glossary-card-what {
+    font-size: 12px; color: var(--text-muted); line-height: 1.5; margin-bottom: 6px;
+  }
+  .glossary-card-why {
+    font-size: 11px; color: var(--text-faint); line-height: 1.5; font-style: italic;
+  }
+  .glossary-footer {
+    margin-top: 18px; padding-top: 14px; border-top: 1px solid var(--border);
+    font-size: 11px; color: var(--text-faint); line-height: 1.5; text-align: center;
+  }
+
   /* Perspective pills */
   .perspective-pill {
     display: inline-block; padding: 3px 10px; border-radius: 10px;
@@ -438,6 +487,7 @@
 
 <script src="deep-analysis/loader.js"></script>
 <script src="deep-analysis/citations.js"></script>
+<script src="deep-analysis/glossary.js"></script>
 <script src="deep-analysis/render-panels.js"></script>
 <script src="deep-analysis/render-center.js"></script>
 <script src="deep-analysis/main.js"></script>

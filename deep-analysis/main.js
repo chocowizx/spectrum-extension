@@ -71,8 +71,11 @@
 
       // Re-render with deep data (replaces fast)
       DA.renderResults(data, analysis, true);
-      // Citations load last, after everything else
-      setTimeout(DA.renderCitations, 800);
+      // Citations + glossary load last, after everything else
+      setTimeout(function () {
+        DA.renderCitations();
+        setTimeout(DA.renderGlossary, 400);
+      }, 800);
     } catch (err) {
       if (hasFast) {
         DA.endProgress();
