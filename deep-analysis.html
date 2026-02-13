@@ -390,29 +390,35 @@
     font-size: 11px; color: var(--text-faint); margin-bottom: 20px; line-height: 1.5;
   }
   .glossary-grid {
-    display: grid; grid-template-columns: 1fr 1fr; gap: 10px;
-  }
-  @media (max-width: 600px) {
-    .glossary-grid { grid-template-columns: 1fr; }
+    display: flex; flex-direction: column; gap: 10px;
   }
   .glossary-card {
-    padding: 14px 16px; border-radius: 10px;
+    padding: 16px 20px; border-radius: 10px;
     background: var(--surface2); border: 1px solid var(--border);
     transition: border-color .2s;
   }
   .glossary-card:hover { border-color: rgba(129,140,248,.2); }
   .glossary-card-name {
-    font-size: 12px; font-weight: 700; color: var(--text); margin-bottom: 6px;
+    font-size: 13px; font-weight: 700; color: var(--text); margin-bottom: 10px;
     display: flex; align-items: center; gap: 8px;
   }
   .glossary-dot {
     width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0;
   }
   .glossary-card-what {
-    font-size: 12px; color: var(--text-muted); line-height: 1.5; margin-bottom: 6px;
+    font-size: 12.5px; color: var(--text-muted); line-height: 1.65; margin-bottom: 10px;
   }
   .glossary-card-why {
-    font-size: 11px; color: var(--text-faint); line-height: 1.5; font-style: italic;
+    font-size: 12px; color: var(--text-faint); line-height: 1.6;
+    padding: 10px 14px; border-radius: 8px;
+    border-left: 2px solid rgba(129,140,248,.25);
+    background: rgba(255,255,255,.015);
+  }
+  .glossary-card-why::before {
+    content: 'Why it matters'; display: block;
+    font-size: 9px; font-weight: 700; text-transform: uppercase;
+    letter-spacing: .8px; color: var(--accent); margin-bottom: 4px;
+    font-style: normal;
   }
   .glossary-footer {
     margin-top: 18px; padding-top: 14px; border-top: 1px solid var(--border);
