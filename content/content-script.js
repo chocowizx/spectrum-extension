@@ -599,8 +599,10 @@
           alert("Article data not available. Please reload the page.");
           return;
         }
-        chrome.storage.local.set({
-          deepAnalysisData: {
+        // Send data to background, which opens the page
+        chrome.runtime.sendMessage({
+          type: "OPEN_DEEP_ANALYSIS",
+          data: {
             articleText: __lastArticleData.text,
             articleUrl: __lastArticleData.url || window.location.href,
             articleTitle: __lastArticleData.title || document.title,
@@ -608,9 +610,7 @@
             images: __lastArticleData.images || [],
             fastAnalysis: __lastAnalysis || null,
           }
-        }, function () {
-          window.open(chrome.runtime.getURL("deep-analysis.html"), "_blank");
-        });
+        }).catch(function () {});
       });
     });
   }

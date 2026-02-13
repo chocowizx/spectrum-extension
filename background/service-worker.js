@@ -258,6 +258,7 @@ const DEFAULTS = {
 };
 
 const tabState = {};
+var pendingDeepData = null;
 
 // ---- Detection logic (shared by onUpdated retry and CONTENT_READY) ----
 async function processDetection(tabId, signals) {
@@ -456,6 +457,19 @@ chrome.runtime.onMessage.addListener(function (message, sender, sendResponse) {
         .then(function (result) { sendResponse(result); })
         .catch(function (err) { sendResponse({ error: err.message }); });
       return true;
+    }
+
+    case "OPEN_DEEP_ANALYSIS": {
+      pendingDeepData = message.data;
+      chrome.tabs.create({ url: chrome.runtime.getURL("deep-analysis.html") });
+      sendResponse({ ok: true });
+      break;
+    }
+
+    case "GET_DEEP_DATA": {
+      sendResponse({ data: pendingDeepData || null });
+      pendingDeepData = null;
+      break;
     }
 
     case "GET_STATUS": {
