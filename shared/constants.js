@@ -58,6 +58,14 @@ const SPECTRUM = {
     IDENTITY_FUSION: "identity_fusion",
   },
 
+  // Bias type classification
+  BIAS_TYPE: {
+    IDEOLOGICAL: "ideological",
+    SPIN: "spin",
+    FRAMING: "framing",
+    OMISSION: "omission",
+  },
+
   // Evidence types for explainable verification (Upgrade #10)
   EVIDENCE_TYPE: {
     SUPPORTING: "supporting",

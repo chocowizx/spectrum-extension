@@ -101,6 +101,21 @@
         '</div>';
     }
 
+    // Spin score gauge (after lean bar)
+    if (typeof a.spinScore === "number") {
+      var spin = a.spinScore;
+      var spinColor = spin > 70 ? "var(--red)" : spin > 45 ? "var(--yellow)" : spin > 20 ? "var(--blue)" : "var(--green)";
+      var spinLabel = spin > 70 ? "Heavy" : spin > 45 ? "Notable" : spin > 20 ? "Mild" : "Minimal";
+      html +=
+        '<div style="margin-bottom:16px;">' +
+          '<div style="display:flex;align-items:center;gap:10px;margin-bottom:6px;">' +
+            '<span style="font-size:12px;color:var(--text-faint);">Spin</span>' +
+            '<span style="font-size:13px;font-weight:600;color:' + spinColor + ';">' + spinLabel + ' (' + spin + '/100)</span>' +
+          '</div>' +
+          '<div class="pol-track"><div class="pol-fill" style="width:' + spin + '%;background:' + spinColor + ';"></div></div>' +
+        '</div>';
+    }
+
     // Intent
     var intent = a.intentClassification || {};
     var intentType = intent.type || a.intentType || "";
@@ -139,6 +154,41 @@
         '</div>';
     }
 
+    // Perspective diversity meter (after polarization)
+    var pd = a.perspectiveDiversity;
+    if (pd && typeof pd.score === "number") {
+      var pdScore = pd.score;
+      var pdColor = pdScore >= 75 ? "var(--green)" : pdScore >= 50 ? "var(--blue)" : pdScore >= 25 ? "var(--yellow)" : "var(--red)";
+      var pdLabel = pdScore >= 75 ? "Comprehensive" : pdScore >= 50 ? "Moderate" : pdScore >= 25 ? "Limited" : "Mono-perspective";
+      html +=
+        '<div style="margin-top:16px;">' +
+          '<div style="display:flex;align-items:center;gap:10px;margin-bottom:6px;">' +
+            '<span style="font-size:12px;color:var(--text-faint);">Perspective Diversity</span>' +
+            '<span style="font-size:13px;font-weight:600;color:' + pdColor + ';">' + pdLabel + ' (' + pdScore + '/100)</span>' +
+          '</div>' +
+          '<div class="pol-track"><div class="pol-fill" style="width:' + pdScore + '%;background:' + pdColor + ';"></div></div>';
+
+      // Present perspectives pills
+      var present = pd.presentPerspectives || [];
+      var missing = pd.missingPerspectives || [];
+      if (present.length || missing.length) {
+        html += '<div style="margin-top:10px;">';
+        for (var pi = 0; pi < present.length; pi++) {
+          html += '<span class="perspective-pill present">' + esc(present[pi]) + '</span>';
+        }
+        for (var mi = 0; mi < missing.length; mi++) {
+          html += '<span class="perspective-pill missing">' + esc(missing[mi]) + '</span>';
+        }
+        html += '</div>';
+      }
+
+      if (pd.dominantNarrative) {
+        html += '<div style="margin-top:8px;font-size:12px;color:var(--text-faint);line-height:1.5;font-style:italic;">' + esc(pd.dominantNarrative) + '</div>';
+      }
+
+      html += '</div>';
+    }
+
     if (a.sourceBias) {
       html += '<div style="margin-top:14px;padding-top:12px;border-top:1px solid var(--border);font-size:12px;color:var(--text-faint);line-height:1.5;">' + esc(a.sourceBias) + '</div>';
     }
@@ -162,10 +212,13 @@
       html += '<div class="section-label">Bias Indicators</div>';
       for (var bi = 0; bi < indicators.length; bi++) {
         var b = indicators[bi];
+        var btColors = { ideological: "rgba(168,85,247,", spin: "rgba(251,146,60,", framing: "rgba(96,165,250,", omission: "rgba(251,191,36," };
+        var btColor = btColors[b.biasType] || "rgba(148,163,184,";
+        var btBadge = b.biasType ? '<span class="bias-type-badge" style="background:' + btColor + '.12);color:' + btColor + '1);">' + esc(b.biasType) + '</span>' : '';
         html +=
           '<div style="margin-bottom:10px;padding:10px 14px;border-radius:8px;background:var(--surface2);border:1px solid var(--border);">' +
             '<div style="font-weight:600;color:var(--text);margin-bottom:4px;text-transform:capitalize;font-size:13px;">' +
-              esc((b.pattern || "").replace(/_/g, " ")) + '</div>' +
+              btBadge + esc((b.pattern || "").replace(/_/g, " ")) + '</div>' +
             (b.examples ? '<div style="font-style:italic;color:var(--text-muted);font-size:12px;font-family:var(--serif);">\u201C' +
               b.examples.map(esc).join('\u201D, \u201C') + '\u201D</div>' : '') +
             (b.explanation ? '<div style="color:var(--text-muted);font-size:12px;margin-top:4px;line-height:1.45;">' + esc(b.explanation) + '</div>' : '') +
@@ -212,6 +265,43 @@
               (sb.explanation ? '<div style="font-size:12px;color:var(--text-muted);line-height:1.45;">' + esc(sb.explanation) + '</div>' : '') +
             '</div>';
         }
+        html += '</div>';
+      }
+
+      // Omission analysis section (deep only)
+      var om = a.omissionAnalysis;
+      if (om && typeof om.score === "number") {
+        html += '<div class="section" id="sec-omission">';
+        html += '<div class="section-label">Omission Analysis</div>';
+
+        var omScore = om.score;
+        var omColor = omScore > 70 ? "var(--red)" : omScore > 45 ? "var(--yellow)" : omScore > 20 ? "var(--blue)" : "var(--green)";
+        var omLabel = omScore > 70 ? "Critical" : omScore > 45 ? "Notable" : omScore > 20 ? "Minor" : "Minimal";
+        html +=
+          '<div style="margin-bottom:14px;">' +
+            '<div style="display:flex;align-items:center;gap:10px;margin-bottom:6px;">' +
+              '<span style="font-size:12px;color:var(--text-faint);">Omission Score</span>' +
+              '<span style="font-size:13px;font-weight:600;color:' + omColor + ';">' + omLabel + ' (' + omScore + '/100)</span>' +
+            '</div>' +
+            '<div class="pol-track"><div class="pol-fill" style="width:' + omScore + '%;background:' + omColor + ';"></div></div>' +
+          '</div>';
+
+        var stakeholders = om.missingStakeholders || [];
+        var context = om.missingContext || [];
+        var counter = om.missingCounterEvidence || [];
+
+        if (stakeholders.length || context.length || counter.length) {
+          for (var sti = 0; sti < stakeholders.length; sti++) {
+            html += '<div class="omission-item"><span class="omission-tag" style="background:rgba(168,85,247,.12);color:#A855F7;">STAKEHOLDER</span>' + esc(stakeholders[sti]) + '</div>';
+          }
+          for (var cti = 0; cti < context.length; cti++) {
+            html += '<div class="omission-item"><span class="omission-tag" style="background:rgba(96,165,250,.12);color:#60A5FA;">CONTEXT</span>' + esc(context[cti]) + '</div>';
+          }
+          for (var evi = 0; evi < counter.length; evi++) {
+            html += '<div class="omission-item"><span class="omission-tag" style="background:rgba(251,191,36,.12);color:#FBBF24;">EVIDENCE</span>' + esc(counter[evi]) + '</div>';
+          }
+        }
+
         html += '</div>';
       }
     }

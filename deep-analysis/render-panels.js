@@ -64,6 +64,21 @@
       leftHtml += '</div>';
     }
 
+    // Omission summary for left panel
+    var om = a.omissionAnalysis;
+    if (om && typeof om.score === "number") {
+      leftHtml += '<div class="side-card">';
+      leftHtml += '<div class="side-card-label">Omission Summary</div>';
+      var omColor = om.score > 70 ? "#F87171" : om.score > 45 ? "#FBBF24" : om.score > 20 ? "#60A5FA" : "#4ADE80";
+      leftHtml += '<div class="side-source" style="display:flex;justify-content:space-between;align-items:center;">' +
+        '<span>Omission Score</span><strong style="color:' + omColor + ';">' + om.score + '/100</strong></div>';
+      var omTotal = (om.missingStakeholders || []).length + (om.missingContext || []).length + (om.missingCounterEvidence || []).length;
+      if (omTotal > 0) {
+        leftHtml += '<div class="side-source">' + omTotal + ' omission' + (omTotal > 1 ? 's' : '') + ' identified</div>';
+      }
+      leftHtml += '</div>';
+    }
+
     // Methodology card
     leftHtml += '<div class="side-card" style="border-color:rgba(129,140,248,.15);">';
     leftHtml += '<div class="side-card-label">Methodology</div>';
@@ -146,6 +161,23 @@
           '<strong style="color:' + clr + ';">' + typeCount[key] + '</strong>' +
           '</div>';
       }
+      rightHtml += '</div>';
+    }
+
+    // Perspective balance card
+    var pd = a.perspectiveDiversity;
+    if (pd && typeof pd.score === "number") {
+      var presentCount = (pd.presentPerspectives || []).length;
+      var missingCount = (pd.missingPerspectives || []).length;
+      var pdColor = pd.score >= 75 ? "#4ADE80" : pd.score >= 50 ? "#60A5FA" : pd.score >= 25 ? "#FBBF24" : "#F87171";
+      rightHtml += '<div class="side-card">';
+      rightHtml += '<div class="side-card-label">Perspective Balance</div>';
+      rightHtml += '<div class="side-source" style="display:flex;justify-content:space-between;align-items:center;">' +
+        '<span>Diversity Score</span><strong style="color:' + pdColor + ';">' + pd.score + '/100</strong></div>';
+      rightHtml += '<div class="side-source" style="display:flex;justify-content:space-between;align-items:center;">' +
+        '<span style="color:#4ADE80;">Present</span><strong>' + presentCount + '</strong></div>';
+      rightHtml += '<div class="side-source" style="display:flex;justify-content:space-between;align-items:center;">' +
+        '<span style="color:#F87171;">Missing</span><strong>' + missingCount + '</strong></div>';
       rightHtml += '</div>';
     }
 
