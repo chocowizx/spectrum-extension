@@ -328,23 +328,37 @@
       var noteEl = document.createElement("div");
       noteEl.className = "spectrum-margin-note";
       noteEl.dataset.idx = idx;
+
+      // Mini-card: type badge + severity + explanation
+      var pillBg = getClaimPill(claim);
+      var pillText = getClaimPillText(claim);
+      var typeLabel = (claim.type === "verified" ? "\u2713 " : "") + (claim.type || "").replace(/_/g, " ");
+      var sevLabel = (claim.severity || "").charAt(0).toUpperCase() + (claim.severity || "").slice(1);
+      var panelBorderStyle = (claim.type === "verified" || claim.type === "neutral") ? "dashed" : "solid";
+      var explainText = (claim.explanation || "");
+      // Truncate at ~120 chars for sidebar width
+      if (explainText.length > 120) {
+        var cut = explainText.lastIndexOf(" ", 120);
+        explainText = explainText.slice(0, cut > 60 ? cut : 120) + "\u2026";
+      }
+
       noteEl.style.cssText =
         "position:absolute;top:" + topOffset + "px;width:100%;" +
-        "padding:4px 8px;cursor:pointer;border-radius:4px;" +
+        "padding:6px 8px 7px;cursor:pointer;border-radius:6px;" +
         "background:" + MARGIN_BG + ";backdrop-filter:blur(8px);" +
-        "border:1px solid " + BORDER + ";" +
+        "border:1px solid " + BORDER + ";border-left:3px " + panelBorderStyle + " " + color + ";" +
         "box-shadow:0 1px 3px rgba(0,0,0,.03);" +
         "transition:box-shadow .15s,transform .1s;";
 
-      // Simple: colored dot + one-line summary
-      var shortText = (claim.explanation || "").split(/[.!?]\s/)[0];
-      if (shortText && !shortText.match(/[.!?]$/)) shortText += ".";
-      var icon = claim.type === "verified" ? "\u2713" : "\u2022";
-
       noteEl.innerHTML =
-        '<div style="display:flex;gap:5px;align-items:baseline;">' +
-          '<span style="color:' + color + ';font-size:11px;flex-shrink:0;line-height:1;">' + icon + '</span>' +
-          '<span style="font-size:11px;color:' + TEXT_MUTED + ';line-height:1.35;">' + escapeHtml(shortText) + '</span>' +
+        '<div style="display:flex;align-items:center;gap:4px;margin-bottom:3px;">' +
+          '<span style="display:inline-block;padding:1px 5px;border-radius:3px;font-size:8px;' +
+            'font-weight:600;text-transform:uppercase;letter-spacing:.3px;' +
+            'background:' + pillBg + ';color:' + pillText + ';">' + escapeHtml(typeLabel) + '</span>' +
+          (sevLabel ? '<span style="font-size:8px;color:' + TEXT_FAINT + ';">' + sevLabel + '</span>' : '') +
+        '</div>' +
+        '<div style="font-size:10px;color:' + TEXT_MUTED + ';line-height:1.4;font-family:' + FONT_SERIF + ';">' +
+          escapeHtml(explainText) +
         '</div>';
 
       noteEl.addEventListener("mouseenter", function () {
@@ -1174,7 +1188,43 @@
         '</div>';
     }
 
-    banner.innerHTML = row1Html + row2Html + row3Html;
+    // Row 4: Journalism quality verdict
+    var row4Html = "";
+    var vqScore = 100;
+    var vqHasData = false;
+    var vqFlags = [];
+    var vqStrengths = [];
+    var vqSpin = typeof analysis.spinScore === "number" ? analysis.spinScore : null;
+    var vqIntentType = intentType;
+    var vqPol = polarization;
+
+    if (vqSpin !== null) { vqHasData = true; vqScore -= vqSpin * 0.25; if (vqSpin > 60) vqFlags.push("High spin"); else if (vqSpin <= 20) vqStrengths.push("Low spin"); }
+    if (vqIntentType) { vqHasData = true; var vqIP = { informative: 0, advocacy: 5, persuasion: 20, manipulation: 35 }; vqScore -= vqIP[vqIntentType] || 0; if (vqIntentType === "manipulation") vqFlags.push("Manipulative"); else if (vqIntentType === "persuasion") vqFlags.push("Persuasive"); else if (vqIntentType === "informative") vqStrengths.push("Informative"); }
+    if (vqPol !== null) { vqScore -= vqPol * 0.15; if (vqPol > 60) vqFlags.push("Polarizing"); else if (vqPol <= 20) vqStrengths.push("Non-polarizing"); }
+    if (leanScore !== null) { if (Math.abs(leanScore) > 0.6) vqFlags.push("Strong lean"); else if (Math.abs(leanScore) < 0.15) vqStrengths.push("Balanced"); }
+    vqScore = Math.max(0, Math.min(100, Math.round(vqScore)));
+
+    if (vqHasData) {
+      var vqLabel, vqColor;
+      if (vqScore >= 80) { vqLabel = "Solid Journalism"; vqColor = "#4ADE80"; }
+      else if (vqScore >= 60) { vqLabel = "Generally Fair"; vqColor = "#60A5FA"; }
+      else if (vqScore >= 40) { vqLabel = "Mixed Practice"; vqColor = "#FBBF24"; }
+      else if (vqScore >= 20) { vqLabel = "Questionable Practice"; vqColor = "#F87171"; }
+      else { vqLabel = "Poor Journalism"; vqColor = "#F87171"; }
+
+      var vqPillsHtml = "";
+      for (var vsi = 0; vsi < vqStrengths.length; vsi++) vqPillsHtml += '<span style="padding:1px 7px;border-radius:10px;font-size:10px;font-weight:600;background:rgba(96,165,250,.1);color:#60A5FA;">' + escapeHtml(vqStrengths[vsi]) + '</span>';
+      for (var vfi = 0; vfi < vqFlags.length; vfi++) vqPillsHtml += '<span style="padding:1px 7px;border-radius:10px;font-size:10px;font-weight:600;background:rgba(248,113,113,.1);color:#F87171;">' + escapeHtml(vqFlags[vfi]) + '</span>';
+
+      row4Html =
+        '<div style="margin-top:8px;padding-top:8px;border-top:1px solid ' + BORDER + ';display:flex;align-items:center;gap:10px;flex-wrap:wrap;">' +
+          '<span style="font-size:13px;font-weight:700;color:' + vqColor + ';">' + vqLabel + '</span>' +
+          '<span style="font-size:11px;font-weight:800;color:' + vqColor + ';opacity:.5;">' + vqScore + '</span>' +
+          vqPillsHtml +
+        '</div>';
+    }
+
+    banner.innerHTML = row1Html + row2Html + row3Html + row4Html;
 
     var articleEl = document.querySelector("article, [role='main'], main, .article-body, .story-body");
     if (articleEl) {
