@@ -1158,14 +1158,30 @@
       else if (vqScore >= 20) { vqLabel = "Questionable Practice"; vqColor = "#F87171"; }
       else { vqLabel = "Poor Journalism"; vqColor = "#F87171"; }
 
-      // Blue pills (strengths) and red pills (flags)
-      var bluePillsHtml = "";
-      for (var vsi = 0; vsi < vqStrengths.length; vsi++) bluePillsHtml += '<span style="padding:1px 7px;border-radius:10px;font-size:10px;font-weight:600;background:rgba(96,165,250,.12);color:#60A5FA;">' + escapeHtml(vqStrengths[vsi]) + '</span>';
-      var redPillsHtml = "";
-      for (var vfi = 0; vfi < vqFlags.length; vfi++) redPillsHtml += '<span style="padding:1px 7px;border-radius:10px;font-size:10px;font-weight:600;background:rgba(248,113,113,.12);color:#F87171;">' + escapeHtml(vqFlags[vfi]) + '</span>';
+      // Build pill HTML for positioning on the spectrum
+      // Red pills spread across the left portion (0–40%), blue across the right (60–100%)
+      var redPillsOnBar = "";
+      for (var vfi = 0; vfi < vqFlags.length; vfi++) {
+        var rPos = 5 + (vfi * 30 / Math.max(vqFlags.length, 1)); // spread 5–35%
+        redPillsOnBar += '<span style="position:absolute;bottom:calc(100% + 4px);left:' + rPos + '%;transform:translateX(-50%);' +
+          'padding:1px 6px;border-radius:10px;font-size:9px;font-weight:600;white-space:nowrap;' +
+          'background:rgba(248,113,113,.15);color:#F87171;border:1px solid rgba(248,113,113,.2);">' +
+          escapeHtml(vqFlags[vfi]) + '</span>';
+      }
+      var bluePillsOnBar = "";
+      for (var vsi = 0; vsi < vqStrengths.length; vsi++) {
+        var bPos = 100 - 5 - (vsi * 30 / Math.max(vqStrengths.length, 1)); // spread 65–95%
+        bluePillsOnBar += '<span style="position:absolute;bottom:calc(100% + 4px);left:' + bPos + '%;transform:translateX(-50%);' +
+          'padding:1px 6px;border-radius:10px;font-size:9px;font-weight:600;white-space:nowrap;' +
+          'background:rgba(96,165,250,.15);color:#60A5FA;border:1px solid rgba(96,165,250,.2);">' +
+          escapeHtml(vqStrengths[vsi]) + '</span>';
+      }
 
-      // Linear spectrum bar: blue (100) → red (0)
-      var barPct = vqScore; // 0=bad(red), 100=good(blue)
+      // Count pill rows to set top padding
+      var pillRowCount = Math.max(vqFlags.length, vqStrengths.length);
+      var topPad = pillRowCount > 0 ? 24 : 0;
+
+      var barPct = vqScore;
       var spectrumHtml =
         '<div style="margin-top:8px;padding-top:8px;border-top:1px solid ' + BORDER + ';">' +
           // Label + score
@@ -1173,24 +1189,25 @@
             '<span style="font-size:13px;font-weight:700;color:' + vqColor + ';">' + vqLabel + '</span>' +
             '<span style="font-size:11px;font-weight:800;color:' + vqColor + ';opacity:.6;">' + vqScore + '/100</span>' +
           '</div>' +
-          // Spectrum bar
-          '<div style="position:relative;height:8px;border-radius:4px;' +
-            'background:linear-gradient(to right,#F87171,#FBBF24,#60A5FA,#4ADE80);margin-bottom:8px;">' +
+          // Spectrum bar with pills positioned above
+          '<div style="position:relative;margin-top:' + topPad + 'px;margin-bottom:10px;">' +
+            // Pills floating above the bar
+            redPillsOnBar + bluePillsOnBar +
+            // The gradient bar
+            '<div style="height:8px;border-radius:4px;' +
+              'background:linear-gradient(to right,#F87171,#FBBF24 35%,#94A3B8 50%,#60A5FA 65%,#4ADE80);">' +
+            '</div>' +
             // Score marker
-            '<div style="position:absolute;top:-3px;left:calc(' + barPct + '% - 7px);width:14px;height:14px;' +
+            '<div style="position:absolute;bottom:-3px;left:calc(' + barPct + '% - 7px);width:14px;height:14px;' +
               'border-radius:50%;background:' + vqColor + ';border:2px solid white;' +
               'box-shadow:0 1px 4px rgba(0,0,0,.25);"></div>' +
           '</div>' +
           // Scale labels
-          '<div style="display:flex;justify-content:space-between;font-size:8px;color:' + TEXT_FAINT + ';margin-bottom:6px;">' +
+          '<div style="display:flex;justify-content:space-between;font-size:8px;color:' + TEXT_FAINT + ';margin-bottom:4px;">' +
             '<span>Poor</span><span>Questionable</span><span>Mixed</span><span>Fair</span><span>Solid</span>' +
           '</div>' +
-          // Pills row: blue left, red right
-          '<div style="display:flex;align-items:center;gap:5px;flex-wrap:wrap;">' +
-            bluePillsHtml + redPillsHtml +
-          '</div>' +
           // Fast analysis disclaimer
-          '<div style="margin-top:6px;font-size:9px;color:' + TEXT_FAINT + ';font-style:italic;">' +
+          '<div style="font-size:9px;color:' + TEXT_FAINT + ';font-style:italic;">' +
             'At a glance \u2014 evaluation may change with a full deep analysis.' +
           '</div>' +
         '</div>';
