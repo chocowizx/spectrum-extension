@@ -146,21 +146,36 @@
       else if (vQuality >= 20) { vLabel = "Questionable Practice"; vColor = "#F87171"; }
       else { vLabel = "Poor Journalism"; vColor = "#F87171"; }
 
-      var vPills = '';
+      var vBluePills = '';
       for (var vi = 0; vi < vStrengths.length; vi++) {
-        vPills += '<span style="display:inline-block;padding:3px 10px;border-radius:10px;font-size:11px;font-weight:600;background:rgba(96,165,250,.12);color:#60A5FA;">' + esc(vStrengths[vi]) + '</span>';
+        vBluePills += '<span style="display:inline-block;padding:3px 10px;border-radius:10px;font-size:11px;font-weight:600;background:rgba(96,165,250,.12);color:#60A5FA;">' + esc(vStrengths[vi]) + '</span>';
       }
+      var vRedPills = '';
       for (var vj = 0; vj < vFlags.length; vj++) {
-        vPills += '<span style="display:inline-block;padding:3px 10px;border-radius:10px;font-size:11px;font-weight:600;background:rgba(248,113,113,.12);color:#F87171;">' + esc(vFlags[vj]) + '</span>';
+        vRedPills += '<span style="display:inline-block;padding:3px 10px;border-radius:10px;font-size:11px;font-weight:600;background:rgba(248,113,113,.12);color:#F87171;">' + esc(vFlags[vj]) + '</span>';
       }
 
       html +=
         '<div style="margin-bottom:20px;padding:20px 24px;border-radius:10px;background:var(--surface2);border-top:3px solid ' + vColor + ';">' +
-          '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:' + (vPills ? '12px' : '0') + ';">' +
+          // Label + score
+          '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">' +
             '<div style="font-size:20px;font-weight:700;color:' + vColor + ';">' + vLabel + '</div>' +
             '<div style="font-size:28px;font-weight:800;color:' + vColor + ';opacity:.6;">' + vQuality + '</div>' +
           '</div>' +
-          (vPills ? '<div style="display:flex;flex-wrap:wrap;gap:6px;">' + vPills + '</div>' : '') +
+          // Spectrum bar
+          '<div style="position:relative;height:10px;border-radius:5px;' +
+            'background:linear-gradient(to right,#F87171,#FBBF24,#60A5FA,#4ADE80);margin-bottom:8px;">' +
+            '<div style="position:absolute;top:-4px;left:calc(' + vQuality + '% - 9px);width:18px;height:18px;' +
+              'border-radius:50%;background:' + vColor + ';border:2.5px solid white;' +
+              'box-shadow:0 1px 4px rgba(0,0,0,.25);"></div>' +
+          '</div>' +
+          // Scale labels
+          '<div style="display:flex;justify-content:space-between;font-size:9px;color:var(--text-faint);margin-bottom:12px;">' +
+            '<span>Poor</span><span>Questionable</span><span>Mixed</span><span>Fair</span><span>Solid</span>' +
+          '</div>' +
+          // Pills
+          ((vBluePills || vRedPills) ?
+            '<div style="display:flex;flex-wrap:wrap;gap:6px;">' + vBluePills + vRedPills + '</div>' : '') +
         '</div>';
     }
 

@@ -264,140 +264,76 @@
   }
 
   // ============================================================
-  // MARGIN SIDEBAR — concise notes beside the article
+  // INLINE NOTE CARDS — compact cards after each highlighted paragraph
   // ============================================================
   function buildMarginSidebar(articleEl) {
-    var existing = document.getElementById("spectrum-margin-sidebar");
-    if (existing) existing.remove();
+    // Remove any previous inline notes
+    document.querySelectorAll(".spectrum-inline-note").forEach(function (n) { n.remove(); });
     if (marginNotes.length === 0) return;
 
-    // Position sidebar on document.body to avoid overflow:hidden clipping from article ancestors
-    var articleRect = articleEl.getBoundingClientRect();
-    var scrollY = window.scrollY || document.documentElement.scrollTop;
-    var rightSpace = window.innerWidth - articleRect.right;
-    var leftSpace = articleRect.left;
-    var sidebarWidth = 210;
-    var onRight = rightSpace >= leftSpace;
-    // Need at least ~120px to be useful; hide sidebar if too narrow
-    if (Math.max(rightSpace, leftSpace) < 120) return;
-    // Shrink sidebar to fit available space
-    var availSpace = onRight ? rightSpace - 16 : leftSpace - 16;
-    if (availSpace < sidebarWidth) sidebarWidth = Math.max(120, availSpace);
-    var sidebarLeft = onRight
-      ? articleRect.right + 8
-      : articleRect.left - sidebarWidth - 8;
-
-    var sidebar = document.createElement("div");
-    sidebar.id = "spectrum-margin-sidebar";
-    sidebar.style.cssText =
-      "position:absolute;top:0;left:" + sidebarLeft + "px;width:" + sidebarWidth + "px;" +
-      "font-family:" + FONT_SANS + ";z-index:2147483647;pointer-events:auto;" +
-      "overflow:visible;";
-
-    // Toggle button
-    var toggle = document.createElement("div");
-    toggle.id = "spectrum-sidebar-toggle";
-    toggle.style.cssText =
-      "position:sticky;top:8px;z-index:1;display:flex;align-items:center;gap:4px;" +
-      "padding:3px 8px;margin-bottom:6px;cursor:pointer;border-radius:4px;" +
-      "background:" + MARGIN_BG + ";border:1px solid " + BORDER + ";" +
-      "font-size:10px;color:" + TEXT_FAINT + ";user-select:none;width:fit-content;";
-    toggle.innerHTML = '<span style="font-size:12px;">&#9668;</span> <span>hide notes</span>';
-    var sidebarHidden = false;
-
-    var notesWrap = document.createElement("div");
-    notesWrap.id = "spectrum-sidebar-notes";
-    notesWrap.style.cssText = "position:relative;";
-
-    toggle.addEventListener("click", function () {
-      sidebarHidden = !sidebarHidden;
-      notesWrap.style.display = sidebarHidden ? "none" : "block";
-      toggle.innerHTML = sidebarHidden
-        ? '<span style="font-size:12px;">&#9658;</span> <span>show notes</span>'
-        : '<span style="font-size:12px;">&#9668;</span> <span>hide notes</span>';
-    });
-
-    sidebar.appendChild(toggle);
-    sidebar.appendChild(notesWrap);
+    // Track which paragraphs already have notes to avoid duplicates
+    var seenParagraphs = new Map();
 
     marginNotes.forEach(function (note) {
       var hl = note.wrapper;
       var claim = note.claim;
-      var idx = note.index;
       var color = getClaimColor(claim);
-
-      // Page-absolute Y position for this highlight
-      var hlRect = hl.getBoundingClientRect();
-      var topOffset = hlRect.top + scrollY;
-
-      var noteEl = document.createElement("div");
-      noteEl.className = "spectrum-margin-note";
-      noteEl.dataset.idx = idx;
-
-      // Mini-card: type badge + severity + explanation
       var pillBg = getClaimPill(claim);
       var pillText = getClaimPillText(claim);
       var typeLabel = (claim.type === "verified" ? "\u2713 " : "") + (claim.type || "").replace(/_/g, " ");
       var sevLabel = (claim.severity || "").charAt(0).toUpperCase() + (claim.severity || "").slice(1);
       var panelBorderStyle = (claim.type === "verified" || claim.type === "neutral") ? "dashed" : "solid";
       var explainText = (claim.explanation || "");
-      // Truncate at ~120 chars for sidebar width
-      if (explainText.length > 120) {
-        var cut = explainText.lastIndexOf(" ", 120);
-        explainText = explainText.slice(0, cut > 60 ? cut : 120) + "\u2026";
-      }
 
-      noteEl.style.cssText =
-        "position:absolute;top:" + topOffset + "px;width:100%;" +
-        "padding:6px 8px 7px;cursor:pointer;border-radius:6px;" +
-        "background:" + MARGIN_BG + ";backdrop-filter:blur(8px);" +
+      // Find the parent paragraph
+      var parentP = hl.closest("p");
+      if (!parentP) return;
+
+      // Create inline note card
+      var card = document.createElement("div");
+      card.className = "spectrum-inline-note";
+      card.style.cssText =
+        "margin:4px 0 10px;padding:7px 12px;border-radius:6px;" +
+        "background:" + PANEL_BG + ";backdrop-filter:blur(8px);" +
         "border:1px solid " + BORDER + ";border-left:3px " + panelBorderStyle + " " + color + ";" +
-        "box-shadow:0 1px 3px rgba(0,0,0,.03);" +
-        "transition:box-shadow .15s,transform .1s;";
+        "box-shadow:0 1px 4px rgba(0,0,0,.04);" +
+        "font-family:" + FONT_SANS + ";cursor:pointer;" +
+        "transition:box-shadow .15s;";
 
-      noteEl.innerHTML =
-        '<div style="display:flex;align-items:center;gap:4px;margin-bottom:3px;">' +
-          '<span style="display:inline-block;padding:1px 5px;border-radius:3px;font-size:8px;' +
-            'font-weight:600;text-transform:uppercase;letter-spacing:.3px;' +
+      card.innerHTML =
+        '<div style="display:flex;align-items:center;gap:6px;margin-bottom:3px;">' +
+          '<span style="display:inline-block;padding:1px 6px;border-radius:3px;font-size:9px;' +
+            'font-weight:600;text-transform:uppercase;letter-spacing:.4px;' +
             'background:' + pillBg + ';color:' + pillText + ';">' + escapeHtml(typeLabel) + '</span>' +
-          (sevLabel ? '<span style="font-size:8px;color:' + TEXT_FAINT + ';">' + sevLabel + '</span>' : '') +
+          (sevLabel ? '<span style="font-size:9px;color:' + TEXT_FAINT + ';">' + sevLabel + '</span>' : '') +
         '</div>' +
-        '<div style="font-size:10px;color:' + TEXT_MUTED + ';line-height:1.4;font-family:' + FONT_SERIF + ';">' +
+        '<div style="font-size:12px;color:' + TEXT_MUTED + ';line-height:1.45;font-family:' + FONT_SERIF + ';">' +
           escapeHtml(explainText) +
         '</div>';
 
-      noteEl.addEventListener("mouseenter", function () {
-        noteEl.style.boxShadow = "0 2px 8px rgba(0,0,0,.08)";
-        noteEl.style.transform = "translateX(" + (onRight ? "-1px" : "1px") + ")";
+      card.addEventListener("mouseenter", function () {
+        card.style.boxShadow = "0 2px 8px rgba(0,0,0,.08)";
         hl.style.background = getClaimBg(claim).replace("0.07", "0.18");
       });
-      noteEl.addEventListener("mouseleave", function () {
-        noteEl.style.boxShadow = "0 1px 3px rgba(0,0,0,.03)";
-        noteEl.style.transform = "none";
+      card.addEventListener("mouseleave", function () {
+        card.style.boxShadow = "0 1px 4px rgba(0,0,0,.04)";
         hl.style.background = getClaimBg(claim);
       });
-      noteEl.addEventListener("click", function () {
+      card.addEventListener("click", function () {
         hl.click();
-        hl.scrollIntoView({ behavior: "smooth", block: "center" });
       });
 
-      notesWrap.appendChild(noteEl);
-    });
-
-    // Append to body to avoid overflow:hidden clipping from article's ancestors
-    document.body.appendChild(sidebar);
-
-    // De-overlap
-    var allNotes = notesWrap.querySelectorAll(".spectrum-margin-note");
-    for (var i = 1; i < allNotes.length; i++) {
-      var prev = allNotes[i - 1];
-      var curr = allNotes[i];
-      var prevBottom = parseFloat(prev.style.top) + prev.offsetHeight + 8;
-      var currTop = parseFloat(curr.style.top);
-      if (currTop < prevBottom) {
-        curr.style.top = prevBottom + "px";
+      // Insert after the paragraph (or after the last note for this paragraph)
+      if (seenParagraphs.has(parentP)) {
+        var lastNote = seenParagraphs.get(parentP);
+        lastNote.insertAdjacentElement("afterend", card);
+      } else if (parentP.nextSibling) {
+        parentP.parentNode.insertBefore(card, parentP.nextSibling);
+      } else {
+        parentP.parentNode.appendChild(card);
       }
-    }
+      seenParagraphs.set(parentP, card);
+    });
   }
 
   // ============================================================
@@ -1234,16 +1170,40 @@
       else if (vqScore >= 20) { vqLabel = "Questionable Practice"; vqColor = "#F87171"; }
       else { vqLabel = "Poor Journalism"; vqColor = "#F87171"; }
 
-      var vqPillsHtml = "";
-      for (var vsi = 0; vsi < vqStrengths.length; vsi++) vqPillsHtml += '<span style="padding:1px 7px;border-radius:10px;font-size:10px;font-weight:600;background:rgba(96,165,250,.1);color:#60A5FA;">' + escapeHtml(vqStrengths[vsi]) + '</span>';
-      for (var vfi = 0; vfi < vqFlags.length; vfi++) vqPillsHtml += '<span style="padding:1px 7px;border-radius:10px;font-size:10px;font-weight:600;background:rgba(248,113,113,.1);color:#F87171;">' + escapeHtml(vqFlags[vfi]) + '</span>';
+      // Blue pills (strengths) and red pills (flags)
+      var bluePillsHtml = "";
+      for (var vsi = 0; vsi < vqStrengths.length; vsi++) bluePillsHtml += '<span style="padding:1px 7px;border-radius:10px;font-size:10px;font-weight:600;background:rgba(96,165,250,.12);color:#60A5FA;">' + escapeHtml(vqStrengths[vsi]) + '</span>';
+      var redPillsHtml = "";
+      for (var vfi = 0; vfi < vqFlags.length; vfi++) redPillsHtml += '<span style="padding:1px 7px;border-radius:10px;font-size:10px;font-weight:600;background:rgba(248,113,113,.12);color:#F87171;">' + escapeHtml(vqFlags[vfi]) + '</span>';
 
-      row4Html =
-        '<div style="margin-top:8px;padding-top:8px;border-top:1px solid ' + BORDER + ';display:flex;align-items:center;gap:10px;flex-wrap:wrap;">' +
-          '<span style="font-size:13px;font-weight:700;color:' + vqColor + ';">' + vqLabel + '</span>' +
-          '<span style="font-size:11px;font-weight:800;color:' + vqColor + ';opacity:.5;">' + vqScore + '</span>' +
-          vqPillsHtml +
+      // Linear spectrum bar: blue (100) → red (0)
+      var barPct = vqScore; // 0=bad(red), 100=good(blue)
+      var spectrumHtml =
+        '<div style="margin-top:8px;padding-top:8px;border-top:1px solid ' + BORDER + ';">' +
+          // Label + score
+          '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">' +
+            '<span style="font-size:13px;font-weight:700;color:' + vqColor + ';">' + vqLabel + '</span>' +
+            '<span style="font-size:11px;font-weight:800;color:' + vqColor + ';opacity:.6;">' + vqScore + '/100</span>' +
+          '</div>' +
+          // Spectrum bar
+          '<div style="position:relative;height:8px;border-radius:4px;' +
+            'background:linear-gradient(to right,#F87171,#FBBF24,#60A5FA,#4ADE80);margin-bottom:8px;">' +
+            // Score marker
+            '<div style="position:absolute;top:-3px;left:calc(' + barPct + '% - 7px);width:14px;height:14px;' +
+              'border-radius:50%;background:' + vqColor + ';border:2px solid white;' +
+              'box-shadow:0 1px 4px rgba(0,0,0,.25);"></div>' +
+          '</div>' +
+          // Scale labels
+          '<div style="display:flex;justify-content:space-between;font-size:8px;color:' + TEXT_FAINT + ';margin-bottom:6px;">' +
+            '<span>Poor</span><span>Questionable</span><span>Mixed</span><span>Fair</span><span>Solid</span>' +
+          '</div>' +
+          // Pills row: blue left, red right
+          '<div style="display:flex;align-items:center;gap:5px;flex-wrap:wrap;">' +
+            bluePillsHtml + redPillsHtml +
+          '</div>' +
         '</div>';
+
+      row4Html = spectrumHtml;
     }
 
     banner.innerHTML = row1Html + row2Html + row3Html + row4Html;
@@ -1486,8 +1446,7 @@
     if (polarization) polarization.remove();
     document.querySelectorAll(".spectrum-inline-panel").forEach(function (p) { p.remove(); });
     dismissBubble();
-    var sidebar = document.getElementById("spectrum-margin-sidebar");
-    if (sidebar) sidebar.remove();
+    document.querySelectorAll(".spectrum-inline-note").forEach(function (n) { n.remove(); });
     marginNotes = [];
   }
 
