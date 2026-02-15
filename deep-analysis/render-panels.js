@@ -79,6 +79,35 @@
       leftHtml += '</div>';
     }
 
+    // Evidence strength graph (groundwork — renders evidence chains from claims)
+    var allEvidence = [];
+    for (var ei = 0; ei < claims.length; ei++) {
+      var claimSrc = claims[ei].sources || [];
+      for (var esi = 0; esi < claimSrc.length; esi++) {
+        allEvidence.push(claimSrc[esi]);
+      }
+    }
+    if (allEvidence.length > 0) {
+      leftHtml += '<div class="side-card">';
+      leftHtml += '<div class="side-card-label">Evidence Strength</div>';
+      var strengthColors = { strong: "#4ADE80", moderate: "#FBBF24", weak: "#F87171" };
+      var typeIcons = { supporting: "\u2713", contradicting: "\u2717", contextual: "\u2139" };
+      for (var evi2 = 0; evi2 < Math.min(allEvidence.length, 8); evi2++) {
+        var ev2 = allEvidence[evi2];
+        // Evidence items from claim sources don't have type/strength, render as contextual/moderate
+        var evType = ev2.type || "contextual";
+        var evStr = ev2.strength || "moderate";
+        var evIcon = typeIcons[evType] || "\u2022";
+        var evClr = strengthColors[evStr] || "#FBBF24";
+        leftHtml += '<div class="side-source" style="border-left:2px solid ' + evClr + ';padding-left:8px;">' +
+          '<span style="color:' + evClr + ';margin-right:4px;">' + evIcon + '</span>' +
+          '<strong>' + esc(ev2.name || "") + '</strong>' +
+          (ev2.detail ? '<br><span style="font-size:11px;color:var(--text-faint);">' + esc(ev2.detail) + '</span>' : '') +
+          '</div>';
+      }
+      leftHtml += '</div>';
+    }
+
     // Methodology card
     leftHtml += '<div class="side-card" style="border-color:rgba(129,140,248,.15);">';
     leftHtml += '<div class="side-card-label">Methodology</div>';

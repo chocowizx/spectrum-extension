@@ -158,15 +158,15 @@
   var __lastArticleData = null;
   var __lastAnalysis = null;
 
-  function handleNewsDetected(detection) {
+  async function handleNewsDetected(detection) {
     showFloatingBadge("Analyzing\u2026", "#B8963E", detection);
 
     var articleData;
     var isYouTube = window.location.hostname.indexOf("youtube.com") !== -1;
     if (isYouTube && typeof ArticleExtractor !== "undefined") {
-      articleData = ArticleExtractor.extractYouTube();
+      articleData = await ArticleExtractor.extractYouTube();
     } else if (typeof ArticleExtractor !== "undefined") {
-      articleData = ArticleExtractor.extract();
+      articleData = await ArticleExtractor.extract();
     } else { return; }
 
     if (articleData.wordCount < 50) {
@@ -271,13 +271,11 @@
     if (existing) existing.remove();
     if (marginNotes.length === 0) return;
 
-    // Detect available space
+    // Always show — float over other content (ads, recommended articles)
     var articleRect = articleEl.getBoundingClientRect();
     var rightSpace = window.innerWidth - articleRect.right;
     var leftSpace = articleRect.left;
     var sidebarWidth = 200;
-    if (Math.max(rightSpace, leftSpace) < sidebarWidth + 8) return;
-
     var onRight = rightSpace >= leftSpace;
 
     if (getComputedStyle(articleEl).position === "static") {
@@ -289,7 +287,8 @@
     sidebar.style.cssText =
       "position:absolute;top:0;width:" + sidebarWidth + "px;" +
       (onRight ? "left:calc(100% + 6px);" : "right:calc(100% + 6px);") +
-      "font-family:" + FONT_SANS + ";z-index:2147483630;pointer-events:auto;";
+      "font-family:" + FONT_SANS + ";z-index:2147483647;pointer-events:auto;" +
+      "overflow:visible;";
 
     // Toggle button
     var toggle = document.createElement("div");
@@ -589,6 +588,10 @@
           articleTitle: __lastArticleData.title || document.title,
           sourceDomain: __lastArticleData.domain || window.location.hostname,
           images: __lastArticleData.images || [],
+          imageDataUrls: __lastArticleData.imageDataUrls || [],
+          author: __lastArticleData.author || null,
+          isYouTube: __lastArticleData.isYouTube || false,
+          transcript: __lastArticleData.transcript || null,
           fastAnalysis: __lastAnalysis || null,
         }
       }).catch(function () {});
@@ -841,6 +844,10 @@
           articleTitle: __lastArticleData.title || document.title,
           sourceDomain: __lastArticleData.domain || window.location.hostname,
           images: __lastArticleData.images || [],
+          imageDataUrls: __lastArticleData.imageDataUrls || [],
+          author: __lastArticleData.author || null,
+          isYouTube: __lastArticleData.isYouTube || false,
+          transcript: __lastArticleData.transcript || null,
           fastAnalysis: __lastAnalysis || null,
         }
       }).catch(function () {});

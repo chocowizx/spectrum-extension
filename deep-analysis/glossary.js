@@ -86,6 +86,48 @@
       what: "Builds a running profile of each news source by accumulating lean scores, intent classifications, spin scores, and polarization levels across every article Spectrum analyzes from that domain. Over time, this creates a data-driven picture of how a source actually behaves \u2014 not based on a one-time editorial judgment, but on measurable patterns across dozens or hundreds of articles.",
       why: "Static source ratings (\"CNN is left,\" \"Fox is right\") are useful starting points but they\u2019re frozen in time and ignore variation. In practice, every outlet publishes a mix of straight reporting and opinion, and their framing can shift with topics, authors, and news cycles. Source profiling lets you see the real distribution \u2014 does this outlet consistently spin? Are they polarizing on some topics but not others? Do their lean scores cluster tight or spread wide? That\u2019s a fundamentally richer picture than a single label."
     },
+    {
+      name: "Source Deviation Detection",
+      color: "#06B6D4",
+      what: "Compares the current article\u2019s lean score against its source\u2019s historical average. When a publication that typically scores center-left suddenly publishes something that scores center-right, the deviation is flagged. The system tracks the magnitude of the shift and explains what\u2019s different about this particular piece compared to the outlet\u2019s baseline behavior.",
+      why: "An article from a normally centrist source that suddenly shows strong partisan framing is more informative than the same framing from a source that always leans that way. Deviation detection catches these anomalies \u2014 when a source breaks from its own pattern, something unusual is happening. Maybe it\u2019s an opinion piece mixed into the news feed, maybe the topic triggered different editorial instincts, or maybe the outlet\u2019s framing is genuinely shifting. Either way, you should know."
+    },
+    {
+      name: "Multilingual Bias Patterns",
+      color: "#6366F1",
+      what: "Extends bias detection beyond English to recognize language-specific manipulation patterns. For Korean media: 존댓말 (honorific) manipulation that conveys deference or dismissal through formality levels, 북한 framing patterns, 재벌 coverage bias, 보수/진보 tribal language, regional 영남/호남 coding, and references to historical events like 광주 or the 87 democratization movement that carry implicit political weight.",
+      why: "Bias doesn\u2019t work the same way in every language. Korean media has unique manipulation vectors that English bias frameworks completely miss \u2014 the way honorific levels signal editorial attitude, how North Korea framing serves as a political litmus test, or how regional references activate deep tribal loyalties. If Spectrum only understood English-language bias patterns, it would be blind to how half the world\u2019s media actually operates."
+    },
+    {
+      name: "Visual Framing Analysis",
+      color: "#EC4899",
+      what: "Analyzes the images accompanying an article for framing bias. It examines subject positioning (heroic low angle vs. unflattering high angle), contextual elements (protest signs selected for display, crowd size perspectives), emotional staging (subjects caught mid-expression vs. composed), and whether the visual narrative aligns with or contradicts the text. Each image is classified by framing type: sympathetic, neutral, unsympathetic, heroic, or villainizing.",
+      why: "Images are the most powerful framing tool in journalism because they bypass analytical thinking entirely. A factually accurate article with a villainizing photo creates a completely different impression than the same article with a neutral one. Most media literacy focuses exclusively on text \u2014 but research consistently shows that images have a stronger effect on reader perception than words. Visual framing analysis makes this invisible layer of editorial choice visible."
+    },
+    {
+      name: "Temporal Bias Tracking",
+      color: "#8B5CF6",
+      what: "Tracks how a source\u2019s coverage of specific topics shifts over time. It compares the current article\u2019s framing to the source\u2019s 7-day and 30-day averages, measures consistency (how tightly the source\u2019s scores cluster), and identifies narrative shifts \u2014 moments when coverage detectably changes direction on a topic.",
+      why: "News coverage isn\u2019t static. Sources shift their framing in response to editorial pressure, audience feedback, political developments, and competitive dynamics. A source that was covering immigration neutrally three months ago might be covering it with heavy spin today. Without temporal tracking, you\u2019d never notice the shift \u2014 each article looks reasonable in isolation. This tool reveals the trajectory, so you can see whether you\u2019re reading a snapshot or a trend."
+    },
+    {
+      name: "Author Consistency Analysis",
+      color: "#14B8A6",
+      what: "Builds a profile of individual journalists by tracking their lean scores, intent patterns, and spin levels across multiple articles. When you read a piece, it compares the author\u2019s current framing to their historical baseline and flags significant deviations. It distinguishes between authors who consistently write from one perspective and those whose framing varies by topic.",
+      why: "Not all articles from the same outlet are created equal. A beat reporter covering their specialty tends to be more measured than an opinion writer branching into unfamiliar territory. An author who typically writes center-left but suddenly produces a center-right piece is worth noting \u2014 either the topic genuinely calls for different framing, or something else is going on. Author-level tracking gives you a layer of context that source-level analysis alone can\u2019t provide."
+    },
+    {
+      name: "Evidence Strength Mapping",
+      color: "#10B981",
+      what: "Visualizes the evidence supporting and contradicting an article\u2019s key claims as a structured map. Each piece of evidence is categorized as supporting, contradicting, or contextual, rated by strength (strong, moderate, weak), and attributed to a specific named source. The map shows at a glance whether an article\u2019s claims rest on solid foundations or thin evidence.",
+      why: "An article can cite ten sources and still have weak evidence if all ten are quoting the same original study. Evidence mapping shows you the actual structure underneath the citations \u2014 how many independent lines of evidence exist, whether they point in the same direction, and whether any strong contradicting evidence is being ignored. It\u2019s the difference between counting sources and evaluating them."
+    },
+    {
+      name: "Video Transcript Analysis",
+      color: "#F59E0B",
+      what: "Extracts and analyzes transcripts from video news content, including YouTube news segments. It examines spoken framing patterns (how stories are introduced and concluded), speaker selection bias (whose voices are featured and whose are absent), and editing cues inferred from transcript context (abrupt topic changes, leading questions, selective clip ordering). The transcript is processed alongside the video\u2019s metadata and description.",
+      why: "Video news is increasingly where people get their information, but it\u2019s been largely invisible to text-based bias analysis. A news anchor\u2019s word choices, a producer\u2019s decision about which interview clips to include, and the sequencing of segments all carry framing effects that are just as powerful as written bias \u2014 but harder to detect because video feels more \u201Creal\u201D than text. Transcript analysis brings video content into the same analytical framework as written articles."
+    },
   ];
 
   function renderGlossary() {
@@ -95,7 +137,7 @@
 
     var h = '<div class="glossary-section">';
     h += '<div class="glossary-header">How This Analysis Works</div>';
-    h += '<div class="glossary-sub">Spectrum runs 14 distinct tools on every article. Each one measures a different dimension of how information is presented. Here\u2019s what they do, how they work, and why they matter.</div>';
+    h += '<div class="glossary-sub">Spectrum runs 21 distinct tools on every article. Each one measures a different dimension of how information is presented. Here\u2019s what they do, how they work, and why they matter.</div>';
     h += '<div class="glossary-grid">';
 
     for (var i = 0; i < TOOLS.length; i++) {

@@ -2,13 +2,14 @@
 // Extracts clean article content, title, author, date from news pages
 
 const ArticleExtractor = {
-  extract() {
+  async extract() {
     const title = this._extractTitle();
     const author = this._extractAuthor();
     const date = this._extractDate();
     const { text, paragraphs } = this._extractBody();
     const domain = window.location.hostname.replace(/^www\./, "");
     const images = this._extractImages();
+    const imageDataUrls = await this._fetchImageDataUrls(images);
 
     return {
       title,
@@ -20,6 +21,7 @@ const ArticleExtractor = {
       domain,
       wordCount: text.split(/\s+/).length,
       images,
+      imageDataUrls,
     };
   },
 
@@ -167,8 +169,41 @@ const ArticleExtractor = {
     return results.slice(0, 5); // cap at 5 images
   },
 
+  // Fetch and compress article images as base64 data URLs (max 2)
+  async _fetchImageDataUrls(images, maxImages) {
+    if (!maxImages) maxImages = 2;
+    var results = [];
+    var candidates = (images || []).slice(0, maxImages);
+    for (var i = 0; i < candidates.length; i++) {
+      try {
+        var src = candidates[i].src;
+        if (!src) continue;
+        var resp = await fetch(src);
+        if (!resp.ok) continue;
+        var blob = await resp.blob();
+        if (!blob.type.startsWith("image/")) continue;
+        var bmp = await createImageBitmap(blob);
+        var maxW = 512;
+        var w = bmp.width;
+        var h = bmp.height;
+        if (w > maxW) { h = Math.round(h * (maxW / w)); w = maxW; }
+        var canvas = document.createElement("canvas");
+        canvas.width = w;
+        canvas.height = h;
+        var ctx = canvas.getContext("2d");
+        ctx.drawImage(bmp, 0, 0, w, h);
+        bmp.close();
+        var dataUrl = canvas.toDataURL("image/jpeg", 0.85);
+        results.push(dataUrl);
+      } catch (e) {
+        // CORS or other failure — skip silently
+      }
+    }
+    return results;
+  },
+
   // Extract YouTube-specific content
-  extractYouTube() {
+  async extractYouTube() {
     const title = document.querySelector(
       'h1.ytd-watch-metadata yt-formatted-string, h1.title yt-formatted-string, #title h1'
     )?.textContent?.trim() || document.title;
@@ -185,17 +220,33 @@ const ArticleExtractor = {
       '#description-inner, ytd-text-inline-expander .content, #description .content'
     )?.textContent?.trim() || "";
 
+    var textContent = `${title}\n\nBy: ${channelName}\n\n${description}`;
+    var transcript = null;
+
+    // Attempt transcript extraction
+    if (typeof YouTubeDetector !== "undefined" && YouTubeDetector.fetchTranscript) {
+      try {
+        transcript = await YouTubeDetector.fetchTranscript();
+        if (transcript && transcript.text) {
+          textContent += "\n\n--- TRANSCRIPT ---\n" + transcript.text.slice(0, 8000);
+        }
+      } catch (e) {
+        // Non-critical
+      }
+    }
+
     return {
       title,
       author: channelName,
       date: null,
-      text: `${title}\n\nBy: ${channelName}\n\n${description}`,
+      text: textContent,
       paragraphs: [{ text: description, startIndex: 0, endIndex: description.length }],
       url: window.location.href,
       domain: "youtube.com",
-      wordCount: description.split(/\s+/).length,
+      wordCount: textContent.split(/\s+/).length,
       youtubeChannelId: channelId,
       isYouTube: true,
+      transcript: transcript,
     };
   },
 };

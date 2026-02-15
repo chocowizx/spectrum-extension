@@ -83,12 +83,27 @@ const NEWS_SOURCES = {
     { domain: "zerohedge.com", name: "Zero Hedge" },
     { domain: "infowars.com", name: "InfoWars" },
   ],
+  korean: [
+    { domain: "chosun.com", name: "조선일보", lean: "right" },
+    { domain: "joongang.co.kr", name: "중앙일보", lean: "centerRight" },
+    { domain: "donga.com", name: "동아일보", lean: "right" },
+    { domain: "hani.co.kr", name: "한겨레", lean: "left" },
+    { domain: "khan.co.kr", name: "경향신문", lean: "left" },
+    { domain: "news.kbs.co.kr", name: "KBS", lean: "center" },
+    { domain: "imnews.imbc.com", name: "MBC", lean: "center" },
+    { domain: "news.sbs.co.kr", name: "SBS", lean: "center" },
+    { domain: "news.jtbc.co.kr", name: "JTBC", lean: "centerLeft" },
+    { domain: "ytn.co.kr", name: "YTN", lean: "center" },
+    { domain: "yna.co.kr", name: "연합뉴스", lean: "center" },
+    { domain: "ohmynews.com", name: "오마이뉴스", lean: "left" },
+    { domain: "ichannela.com", name: "채널A", lean: "right" },
+  ],
 };
 
 const DOMAIN_LOOKUP = {};
-for (const [lean, sources] of Object.entries(NEWS_SOURCES)) {
+for (const [category, sources] of Object.entries(NEWS_SOURCES)) {
   for (const source of sources) {
-    DOMAIN_LOOKUP[source.domain] = { name: source.name, lean };
+    DOMAIN_LOOKUP[source.domain] = { name: source.name, lean: source.lean || category };
   }
 }
 
@@ -593,6 +608,10 @@ async function handleArticleAnalysis(tabId, articleData) {
       articleTitle: articleData.title,
       sourceDomain: articleData.domain,
       images: articleData.images || [],
+      imageDataUrls: articleData.imageDataUrls || [],
+      author: articleData.author || null,
+      isYouTube: articleData.isYouTube || false,
+      transcript: articleData.transcript || null,
     };
 
     var analysis;

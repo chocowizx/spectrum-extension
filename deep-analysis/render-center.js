@@ -79,6 +79,12 @@
           '<span>\u00B7</span>' +
           '<span>Lean: ' + esc(leanLabel) + '</span>' +
           (a.confidence ? '<span>\u00B7</span><span>Confidence: ' + Math.round(a.confidence * 100) + '%</span>' : '') +
+          // Language indicator
+          (a.detectedLanguage && a.detectedLanguage !== "en" ? (function () {
+            var langFlags = { ko: "\uD83C\uDDF0\uD83C\uDDF7 Korean", es: "\uD83C\uDDEA\uD83C\uDDF8 Spanish", fr: "\uD83C\uDDEB\uD83C\uDDF7 French", de: "\uD83C\uDDE9\uD83C\uDDEA German", zh: "\uD83C\uDDE8\uD83C\uDDF3 Chinese", ja: "\uD83C\uDDEF\uD83C\uDDF5 Japanese", ar: "\uD83C\uDDF8\uD83C\uDDE6 Arabic" };
+            var langLabel = langFlags[a.detectedLanguage] || a.detectedLanguage.toUpperCase();
+            return '<span>\u00B7</span><span class="badge" style="background:rgba(99,102,241,.12);color:#818CF8;font-size:10px;">' + esc(langLabel) + '</span>';
+          })() : '') +
         '</div>' +
       '</div>';
 
@@ -98,6 +104,20 @@
           '<div style="text-align:center;margin-top:8px;font-size:13px;font-weight:600;color:var(--accent);">' +
             (a.leanScore > 0 ? "+" : "") + a.leanScore.toFixed(2) +
           '</div>' +
+        '</div>';
+    }
+
+    // Source deviation callout (after lean bar)
+    if (typeof a.sourceDeviation === "number" && Math.abs(a.sourceDeviation) > 0.2) {
+      var devAbs = Math.abs(a.sourceDeviation);
+      var devColor = devAbs > 0.5 ? "var(--red)" : "var(--yellow)";
+      html +=
+        '<div style="margin-bottom:16px;padding:10px 14px;border-radius:8px;border-left:3px solid ' + devColor + ';background:var(--surface2);">' +
+          '<div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;">' +
+            '<span style="font-size:12px;font-weight:600;color:' + devColor + ';">Source Deviation</span>' +
+            '<span class="badge" style="background:' + devColor + '15;color:' + devColor + ';">' + (a.sourceDeviation > 0 ? "+" : "") + a.sourceDeviation.toFixed(2) + '</span>' +
+          '</div>' +
+          (a.sourceDeviationExplanation ? '<div style="font-size:12px;color:var(--text-muted);line-height:1.5;">' + esc(a.sourceDeviationExplanation) + '</div>' : '') +
         '</div>';
     }
 
@@ -302,6 +322,88 @@
           }
         }
 
+        html += '</div>';
+      }
+
+      // Temporal context section (deep only)
+      var tc = a.temporalContext;
+      if (tc && tc.narrativeShift) {
+        html += '<div class="section" id="sec-temporal">';
+        html += '<div class="section-label">Temporal Context</div>';
+        html += '<div style="font-size:13px;color:var(--text-muted);line-height:1.5;margin-bottom:10px;">' + esc(tc.narrativeShift) + '</div>';
+        if (typeof tc.consistencyScore === "number") {
+          var csScore = tc.consistencyScore;
+          var csColor = csScore >= 75 ? "var(--green)" : csScore >= 50 ? "var(--blue)" : csScore >= 25 ? "var(--yellow)" : "var(--red)";
+          html +=
+            '<div style="margin-bottom:10px;">' +
+              '<div style="display:flex;align-items:center;gap:10px;margin-bottom:6px;">' +
+                '<span style="font-size:12px;color:var(--text-faint);">Consistency</span>' +
+                '<span style="font-size:13px;font-weight:600;color:' + csColor + ';">' + csScore + '/100</span>' +
+              '</div>' +
+              '<div class="pol-track"><div class="pol-fill" style="width:' + csScore + '%;background:' + csColor + ';"></div></div>' +
+            '</div>';
+        }
+        if (tc.trendExplanation) {
+          html += '<div style="font-size:12px;color:var(--text-faint);font-style:italic;line-height:1.5;">' + esc(tc.trendExplanation) + '</div>';
+        }
+        html += '</div>';
+      }
+
+      // Author consistency section (deep only)
+      var ac = a.authorConsistency;
+      if (ac && ac.authorName) {
+        html += '<div class="section" id="sec-author">';
+        html += '<div class="section-label">Author Consistency</div>';
+        var acDevColor = (typeof ac.deviation === "number" && ac.deviation > 0.15) ? "var(--yellow)" : "var(--text-faint)";
+        html +=
+          '<div style="padding:10px 14px;border-radius:8px;border-left:3px solid #8B5CF6;background:var(--surface2);">' +
+            '<div style="font-weight:600;color:var(--text);margin-bottom:6px;">' + esc(ac.authorName) + '</div>' +
+            '<div style="display:flex;gap:16px;flex-wrap:wrap;margin-bottom:6px;">' +
+              (typeof ac.typicalLean === "number" ? '<div style="font-size:12px;color:var(--text-muted);">Typical lean: <strong>' + (ac.typicalLean > 0 ? "+" : "") + ac.typicalLean.toFixed(2) + '</strong></div>' : '') +
+              (typeof ac.deviation === "number" ? '<div style="font-size:12px;color:' + acDevColor + ';">Deviation: <strong>' + ac.deviation.toFixed(2) + '</strong></div>' : '') +
+            '</div>' +
+            (ac.note ? '<div style="font-size:12px;color:var(--text-muted);line-height:1.5;">' + esc(ac.note) + '</div>' : '') +
+          '</div>';
+        html += '</div>';
+      }
+
+      // Image framing analysis (deep only)
+      var imgFraming = a.imageFramingAnalysis || [];
+      if (imgFraming.length > 0) {
+        html += '<div class="section" id="sec-images">';
+        html += '<div class="section-label">Image Framing Analysis</div>';
+        var framingColors = { sympathetic: "#4ADE80", neutral: "#94A3B8", unsympathetic: "#FBBF24", heroic: "#60A5FA", villainizing: "#F87171" };
+        for (var ifi = 0; ifi < imgFraming.length; ifi++) {
+          var imgF = imgFraming[ifi];
+          var ftColor = framingColors[imgF.framingType] || "var(--text-faint)";
+          html +=
+            '<div style="margin-bottom:10px;padding:10px 14px;border-radius:8px;background:var(--surface2);border:1px solid var(--border);">' +
+              '<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">' +
+                '<span style="font-size:11px;color:var(--text-faint);">Image ' + (imgF.imageIndex + 1) + '</span>' +
+                '<span class="badge" style="background:' + ftColor + '15;color:' + ftColor + ';">' + esc(imgF.framingType || "") + '</span>' +
+                (imgF.emotionalTone ? '<span class="badge" style="background:rgba(255,255,255,.04);color:var(--text-faint);">' + esc(imgF.emotionalTone) + '</span>' : '') +
+              '</div>' +
+              (imgF.description ? '<div style="font-size:12px;color:var(--text-muted);line-height:1.5;margin-bottom:4px;">' + esc(imgF.description) + '</div>' : '') +
+              (imgF.biasIndicator ? '<div style="font-size:12px;color:var(--text-faint);padding-left:10px;border-left:2px solid ' + ftColor + ';font-style:italic;">' + esc(imgF.biasIndicator) + '</div>' : '') +
+            '</div>';
+        }
+        html += '</div>';
+      }
+
+      // Video transcript analysis (deep only)
+      var vta = a.videoTranscriptAnalysis;
+      if (vta && vta.hasTranscript) {
+        html += '<div class="section" id="sec-video">';
+        html += '<div class="section-label">Video Transcript Analysis</div>';
+        html +=
+          '<div style="padding:10px 14px;border-radius:8px;border-left:3px solid #F59E0B;background:var(--surface2);">' +
+            '<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">' +
+              '<span class="badge" style="background:rgba(245,158,11,.12);color:#F59E0B;">TRANSCRIPT</span>' +
+              (vta.transcriptLength ? '<span style="font-size:11px;color:var(--text-faint);">' + vta.transcriptLength + ' words</span>' : '') +
+            '</div>' +
+            (vta.speakerBias ? '<div style="font-size:12px;color:var(--text-muted);line-height:1.5;margin-bottom:6px;">' + esc(vta.speakerBias) + '</div>' : '') +
+            (vta.editingCues ? '<div style="font-size:12px;color:var(--text-faint);line-height:1.5;font-style:italic;">' + esc(vta.editingCues) + '</div>' : '') +
+          '</div>';
         html += '</div>';
       }
     }
