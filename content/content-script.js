@@ -191,7 +191,7 @@
     var countText = claims.length + " claim" + (claims.length !== 1 ? "s" : "") + " identified";
     showFloatingBadge(countText, claims.length > 0 ? "#B8963E" : "#5E8AB4", { sourceLean: { lean: lean.replace(/[- ]/g, ""), name: "" } });
 
-    injectArticleBanner(analysis);
+    injectAnalysisSidebar(analysis);
 
     var articleEl = document.querySelector("article, [role='main'], main, .article-body, .story-body, .post-content");
     if (!articleEl) articleEl = document.body;
@@ -987,11 +987,17 @@
   }
 
   // ============================================================
-  // ARTICLE BANNER
+  // ANALYSIS SIDEBAR
   // ============================================================
-  function injectArticleBanner(analysis) {
-    var existing = document.getElementById("spectrum-banner");
+  var __sidebarAnalysis = null;
+  var __sidebarResizeHandler = null;
+
+  function injectAnalysisSidebar(analysis) {
+    __sidebarAnalysis = analysis;
+    var existing = document.getElementById("spectrum-sidebar");
     if (existing) existing.remove();
+    var existingPill = document.getElementById("spectrum-sidebar-pill");
+    if (existingPill) existingPill.remove();
 
     var claims = analysis.claims || [];
     var lean = analysis.overallLean || "";
@@ -1006,133 +1012,29 @@
     var verifiedCount = claims.filter(function (c) { return c.type === "verified"; }).length;
     var neutralCount = claims.filter(function (c) { return c.type === "neutral"; }).length;
 
-    // Intent classification (Upgrade #9) — deep has intentClassification.type, fast has intentType
     var intent = analysis.intentClassification || {};
     var intentType = intent.type || analysis.intentType || "";
     var intentColor = INTENT_COLORS[intentType] || TEXT_FAINT;
     var intentLabel = INTENT_LABELS[intentType] || "";
     var intentConf = intent.confidence ? Math.round(intent.confidence * 100) + "%" : "";
 
-    // Lean score (Upgrade #1) — continuous -1.0 to +1.0
     var leanScore = typeof analysis.leanScore === "number" ? analysis.leanScore : null;
-
-    // Polarization intensity (Upgrade #8 adjacent)
     var polarization = typeof analysis.polarizationIntensity === "number" ? analysis.polarizationIntensity : null;
-
-    // Language detection (Upgrade #2)
     var detectedLang = analysis.detectedLanguage || "";
 
-    var banner = document.createElement("div");
-    banner.id = "spectrum-banner";
-    banner.style.cssText =
-      "background:" + PANEL_BG + ";backdrop-filter:blur(12px);color:" + TEXT_HEAD + ";" +
-      "padding:10px 18px;font-family:" + FONT_SANS + ";" +
-      "font-size:12px;border-radius:8px;margin:10px 0 14px;border:1px solid " + BORDER + ";" +
-      "box-shadow:0 1px 6px rgba(0,0,0,.04);";
-
-    // Row 1: Logo + claim counts + lean badge
     var preAnalyzedBadge = analysis._preAnalyzed
-      ? '<span style="padding:2px 8px;border-radius:10px;font-size:9px;font-weight:700;letter-spacing:.5px;' +
-          'background:linear-gradient(135deg,#6366F1,#8B5CF6);color:#fff;text-transform:uppercase;">Spectrum Analyzed</span>'
+      ? '<span style="padding:2px 6px;border-radius:8px;font-size:8px;font-weight:700;letter-spacing:.4px;' +
+          'background:linear-gradient(135deg,#6366F1,#8B5CF6);color:#fff;text-transform:uppercase;">Pre-analyzed</span>'
       : '';
-    var row1Html =
-      '<div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;">' +
-        '<span style="font-weight:700;letter-spacing:1.5px;font-size:11px;color:' + TEXT_FAINT + ';">SPECTRUM</span>' +
-        preAnalyzedBadge +
-        '<span style="width:1px;height:14px;background:' + BORDER + ';"></span>' +
-        (claims.length > 0 ?
-          '<span style="color:' + TEXT_BODY + ';">' + claims.length + ' claim' + (claims.length !== 1 ? 's' : '') + ' identified</span>' +
-          (highCount ? '<span style="padding:1px 7px;border-radius:3px;font-size:11px;font-weight:600;background:' + SEV_PILL.high + ';color:' + SEV_PILL_TEXT.high + ';">' + highCount + ' high</span>' : '') +
-          (medCount ? '<span style="padding:1px 7px;border-radius:3px;font-size:11px;font-weight:600;background:' + SEV_PILL.medium + ';color:' + SEV_PILL_TEXT.medium + ';">' + medCount + ' med</span>' : '') +
-          (lowCount ? '<span style="padding:1px 7px;border-radius:3px;font-size:11px;font-weight:600;background:' + SEV_PILL.low + ';color:' + SEV_PILL_TEXT.low + ';">' + lowCount + ' low</span>' : '') +
-          (verifiedCount ? '<span style="padding:1px 7px;border-radius:3px;font-size:11px;font-weight:600;background:' + TYPE_PILL.verified + ';color:' + TYPE_PILL_TEXT.verified + ';">' + verifiedCount + ' verified</span>' : '') +
-          (neutralCount ? '<span style="padding:1px 7px;border-radius:3px;font-size:11px;font-weight:600;background:' + TYPE_PILL.neutral + ';color:' + TYPE_PILL_TEXT.neutral + ';">' + neutralCount + ' noted</span>' : '') :
-          '<span style="color:#4ADE80;">No claims identified</span>'
-        ) +
-        '<span style="margin-left:auto;display:flex;align-items:center;gap:8px;">' +
-          // Intent badge (Upgrade #9)
-          (intentLabel ?
-            '<span style="padding:2px 8px;border-radius:10px;font-size:10px;font-weight:600;' +
-              'background:' + intentColor + '15;color:' + intentColor + ';border:1px solid ' + intentColor + '30;">' +
-              intentLabel + (intentConf ? ' \u00B7 ' + intentConf : '') +
-            '</span>' : '') +
-          // Lean badge
-          '<span style="padding:2px 10px;border-radius:10px;font-size:11px;font-weight:600;' +
-            'background:' + leanColor + '18;color:' + leanColor + ';border:1px solid ' + leanColor + '30;">' +
-            leanLabel + (confidence ? ' \u00B7 ' + confidence : '') +
-          '</span>' +
-          // Language badge if non-English
-          (detectedLang && detectedLang !== "en" ?
-            '<span style="padding:2px 6px;border-radius:10px;font-size:9px;font-weight:600;' +
-              'background:rgba(148,163,184,0.1);color:' + TEXT_FAINT + ';border:1px solid ' + BORDER + ';" title="Detected language">' +
-              escapeHtml(detectedLang.toUpperCase()) +
-            '</span>' : '') +
-        '</span>' +
-      '</div>';
 
-    // Row 2: Lean score bar + polarization gauge (only if data exists)
-    var row2Html = "";
-    if (leanScore !== null || polarization !== null) {
-      row2Html = '<div style="display:flex;align-items:center;gap:16px;margin-top:8px;padding-top:8px;border-top:1px solid ' + BORDER + ';">';
-
-      // Lean score bar (Upgrade #1) — gradient from blue (-1) through gray (0) to red (+1)
-      if (leanScore !== null) {
-        var barPct = ((leanScore + 1) / 2) * 100; // 0-100
-        row2Html +=
-          '<div style="flex:1;display:flex;align-items:center;gap:8px;">' +
-            '<span style="font-size:10px;color:' + TEXT_FAINT + ';white-space:nowrap;">Article Lean</span>' +
-            '<div style="flex:1;height:6px;border-radius:3px;background:linear-gradient(to right,#7CB3E0,#94A3B8,#D98282);position:relative;min-width:80px;">' +
-              '<div style="position:absolute;top:-3px;left:calc(' + barPct + '% - 6px);width:12px;height:12px;' +
-                'border-radius:50%;background:' + TEXT_HEAD + ';border:2px solid white;box-shadow:0 1px 3px rgba(0,0,0,.2);"></div>' +
-            '</div>' +
-            '<span style="font-size:10px;color:' + TEXT_MUTED + ';font-weight:600;min-width:28px;text-align:right;">' +
-              (leanScore > 0 ? '+' : '') + leanScore.toFixed(1) +
-            '</span>' +
-          '</div>';
-      }
-
-      // Polarization gauge
-      if (polarization !== null) {
-        var polColor = polarization > 75 ? "#F87171" : polarization > 50 ? "#FBBF24" : polarization > 20 ? "#60A5FA" : "#4ADE80";
-        var polLabel = polarization > 75 ? "Extreme" : polarization > 50 ? "High" : polarization > 20 ? "Moderate" : "Low";
-        row2Html +=
-          '<div style="display:flex;align-items:center;gap:8px;">' +
-            '<span style="font-size:10px;color:' + TEXT_FAINT + ';white-space:nowrap;">Polarization</span>' +
-            '<div style="width:60px;height:6px;border-radius:3px;background:rgba(0,0,0,.06);position:relative;">' +
-              '<div style="height:100%;width:' + polarization + '%;border-radius:3px;background:' + polColor + ';"></div>' +
-            '</div>' +
-            '<span style="font-size:10px;color:' + polColor + ';font-weight:600;">' + polLabel + '</span>' +
-          '</div>';
-      }
-
-      row2Html += '</div>';
-    }
-
-    // Row 3: Intent explanation (if persuasion or manipulation — worth highlighting)
-    var row3Html = "";
-    if (intent.explanation && (intentType === "persuasion" || intentType === "manipulation")) {
-      row3Html =
-        '<div style="margin-top:6px;padding:6px 10px;border-radius:6px;background:' + (INTENT_BG[intentType] || "transparent") + ';' +
-          'border-left:2px solid ' + intentColor + ';font-size:11px;color:' + TEXT_MUTED + ';line-height:1.4;">' +
-          '<strong style="color:' + intentColor + ';">Intent: </strong>' + escapeHtml(intent.explanation) +
-        '</div>';
-    }
-
-    // Row 4: Journalism quality verdict
-    var row4Html = "";
-    var vqScore = 100;
-    var vqHasData = false;
-    var vqFlags = [];
-    var vqStrengths = [];
+    // --- Verdict scoring ---
+    var vqScore = 100, vqHasData = false, vqFlags = [], vqStrengths = [];
     var vqSpin = typeof analysis.spinScore === "number" ? analysis.spinScore : null;
-    var vqIntentType = intentType;
-    var vqPol = polarization;
 
     if (vqSpin !== null) { vqHasData = true; vqScore -= vqSpin * 0.25; if (vqSpin > 60) vqFlags.push("High spin"); else if (vqSpin <= 20) vqStrengths.push("Low spin"); }
-    if (vqIntentType) { vqHasData = true; var vqIP = { informative: 0, advocacy: 5, persuasion: 20, manipulation: 35 }; vqScore -= vqIP[vqIntentType] || 0; if (vqIntentType === "manipulation") vqFlags.push("Manipulative"); else if (vqIntentType === "persuasion") vqFlags.push("Persuasive"); else if (vqIntentType === "informative") vqStrengths.push("Informative"); }
-    if (vqPol !== null) { vqScore -= vqPol * 0.15; if (vqPol > 60) vqFlags.push("Polarizing"); else if (vqPol <= 20) vqStrengths.push("Non-polarizing"); }
+    if (intentType) { vqHasData = true; var vqIP = { informative: 0, advocacy: 5, persuasion: 20, manipulation: 35 }; vqScore -= vqIP[intentType] || 0; if (intentType === "manipulation") vqFlags.push("Manipulative"); else if (intentType === "persuasion") vqFlags.push("Persuasive"); else if (intentType === "informative") vqStrengths.push("Informative"); }
+    if (polarization !== null) { vqScore -= polarization * 0.15; if (polarization > 60) vqFlags.push("Polarizing"); else if (polarization <= 20) vqStrengths.push("Non-polarizing"); }
     if (leanScore !== null) { if (Math.abs(leanScore) > 0.6) vqFlags.push("Strong lean"); else if (Math.abs(leanScore) < 0.15) vqStrengths.push("Balanced"); }
-    // Claim severity scoring (works with fast analysis too)
     if (claims.length > 0) {
       vqHasData = true;
       vqScore -= highCount * 5; vqScore -= medCount * 2;
@@ -1140,7 +1042,6 @@
       if (verifiedCount >= 3) vqStrengths.push(verifiedCount + " verified");
       if (highCount === 0 && medCount <= 1) vqStrengths.push("Few issues");
     }
-    // Lean from string (fast analysis) when no numeric leanScore
     if (leanScore === null && leanNorm) {
       var extremeLeans = { farleft: true, farright: true };
       var moderateLeans = { left: true, right: true };
@@ -1150,84 +1051,147 @@
     }
     vqScore = Math.max(0, Math.min(100, Math.round(vqScore)));
 
+    // --- Build sidebar HTML ---
+    var html = '';
+
+    // Header
+    html +=
+      '<div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;">' +
+        '<span style="font-weight:700;letter-spacing:1.5px;font-size:10px;color:' + TEXT_FAINT + ';">SPECTRUM</span>' +
+        preAnalyzedBadge +
+        '<span id="spectrum-sidebar-min" style="margin-left:auto;cursor:pointer;font-size:18px;color:' + TEXT_FAINT + ';line-height:1;width:22px;height:22px;display:flex;align-items:center;justify-content:center;border-radius:4px;transition:background .15s;" title="Minimize">\u2212</span>' +
+      '</div>';
+
+    // Verdict
     if (vqHasData) {
       var vqLabel, vqColor;
       if (vqScore >= 80) { vqLabel = "Solid Journalism"; vqColor = "#4ADE80"; }
       else if (vqScore >= 60) { vqLabel = "Generally Fair"; vqColor = "#60A5FA"; }
       else if (vqScore >= 40) { vqLabel = "Mixed Practice"; vqColor = "#FBBF24"; }
-      else if (vqScore >= 20) { vqLabel = "Questionable Practice"; vqColor = "#F87171"; }
+      else if (vqScore >= 20) { vqLabel = "Questionable"; vqColor = "#F87171"; }
       else { vqLabel = "Poor Journalism"; vqColor = "#F87171"; }
 
-      // Build pill HTML for positioning on the spectrum
-      // Blue pills (flags/ignorance) on the left, Red pills (strengths/truth) on the right
-      var bluePillsOnBar = "";
-      for (var vfi = 0; vfi < vqFlags.length; vfi++) {
-        var bPos = 5 + (vfi * 30 / Math.max(vqFlags.length, 1));
-        bluePillsOnBar += '<span style="position:absolute;bottom:calc(100% + 4px);left:' + bPos + '%;transform:translateX(-50%);' +
-          'padding:1px 6px;border-radius:10px;font-size:9px;font-weight:600;white-space:nowrap;' +
-          'background:rgba(96,165,250,.15);color:#60A5FA;border:1px solid rgba(96,165,250,.2);">' +
-          escapeHtml(vqFlags[vfi]) + '</span>';
-      }
-      var redPillsOnBar = "";
-      for (var vsi = 0; vsi < vqStrengths.length; vsi++) {
-        var rPos = 100 - 5 - (vsi * 30 / Math.max(vqStrengths.length, 1));
-        redPillsOnBar += '<span style="position:absolute;bottom:calc(100% + 4px);left:' + rPos + '%;transform:translateX(-50%);' +
-          'padding:1px 6px;border-radius:10px;font-size:9px;font-weight:600;white-space:nowrap;' +
-          'background:rgba(248,113,113,.15);color:#F87171;border:1px solid rgba(248,113,113,.2);">' +
-          escapeHtml(vqStrengths[vsi]) + '</span>';
-      }
-
-      // Count pill rows to set top padding
-      var pillRowCount = Math.max(vqFlags.length, vqStrengths.length);
-      var topPad = pillRowCount > 0 ? 24 : 0;
-
-      var barPct = vqScore;
-      var spectrumHtml =
-        '<div style="margin-top:8px;padding-top:8px;border-top:1px solid ' + BORDER + ';">' +
-          // Label + score
-          '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">' +
-            '<span style="font-size:13px;font-weight:700;color:' + vqColor + ';">' + vqLabel + '</span>' +
-            '<span style="font-size:11px;font-weight:800;color:' + vqColor + ';opacity:.6;">' + vqScore + '/100</span>' +
+      html +=
+        '<div style="margin-bottom:12px;padding-bottom:10px;border-bottom:1px solid ' + BORDER + ';">' +
+          '<div style="display:flex;align-items:baseline;gap:4px;margin-bottom:8px;">' +
+            '<span style="font-size:32px;font-weight:800;color:' + vqColor + ';line-height:1;">' + vqScore + '</span>' +
+            '<span style="font-size:11px;color:' + TEXT_FAINT + ';">/100</span>' +
+            '<span style="font-size:10px;font-weight:600;color:' + vqColor + ';margin-left:auto;">' + vqLabel + '</span>' +
           '</div>' +
-          // Spectrum bar with pills positioned above
-          '<div style="position:relative;margin-top:' + topPad + 'px;margin-bottom:10px;">' +
-            // Pills floating above the bar
-            bluePillsOnBar + redPillsOnBar +
-            // The gradient bar: blue (bad) → red (good)
-            '<div style="height:8px;border-radius:4px;' +
-              'background:linear-gradient(to right,#60A5FA,#94A3B8 50%,#F87171);">' +
-            '</div>' +
-            // Score marker
-            '<div style="position:absolute;bottom:-3px;left:calc(' + barPct + '% - 7px);width:14px;height:14px;' +
-              'border-radius:50%;background:' + vqColor + ';border:2px solid white;' +
-              'box-shadow:0 1px 4px rgba(0,0,0,.25);"></div>' +
+          '<div style="position:relative;margin-bottom:6px;">' +
+            '<div style="height:6px;border-radius:3px;background:linear-gradient(to right,#60A5FA,#94A3B8 50%,#F87171);"></div>' +
+            '<div style="position:absolute;bottom:-3px;left:calc(' + vqScore + '% - 5px);width:10px;height:10px;border-radius:50%;background:' + vqColor + ';border:2px solid white;box-shadow:0 1px 3px rgba(0,0,0,.25);"></div>' +
           '</div>' +
-          // Scale labels
-          '<div style="display:flex;justify-content:space-between;font-size:8px;color:' + TEXT_FAINT + ';margin-bottom:4px;">' +
-            '<span>\uD83D\uDD35 Poor</span><span>Mixed</span><span>Solid \uD83D\uDD34</span>' +
+          '<div style="display:flex;justify-content:space-between;font-size:7px;color:' + TEXT_FAINT + ';">' +
+            '<span>\uD83D\uDD35 Poor</span><span>Solid \uD83D\uDD34</span>' +
           '</div>' +
-          // Fast analysis disclaimer
-          '<div style="font-size:9px;color:' + TEXT_FAINT + ';font-style:italic;">' +
-            'At a glance \u2014 evaluation may change with a full deep analysis.' +
-          '</div>' +
+          '<div style="font-size:8px;color:' + TEXT_FAINT + ';font-style:italic;margin-top:4px;">At a glance \u2014 may change with deep analysis.</div>' +
         '</div>';
-
-      row4Html = spectrumHtml;
     }
 
-    // Row 5: Claim breakdown bar + reading tip
-    var row5Html = "";
+    // Pills (flags & strengths)
+    if (vqFlags.length > 0 || vqStrengths.length > 0) {
+      html += '<div style="margin-bottom:10px;padding-bottom:10px;border-bottom:1px solid ' + BORDER + ';">';
+      for (var vfi = 0; vfi < vqFlags.length; vfi++) {
+        html += '<span style="display:inline-block;margin:0 4px 4px 0;padding:2px 8px;border-radius:10px;font-size:9px;font-weight:600;' +
+          'background:rgba(96,165,250,.12);color:#60A5FA;border:1px solid rgba(96,165,250,.2);">' + escapeHtml(vqFlags[vfi]) + '</span>';
+      }
+      for (var vsi = 0; vsi < vqStrengths.length; vsi++) {
+        html += '<span style="display:inline-block;margin:0 4px 4px 0;padding:2px 8px;border-radius:10px;font-size:9px;font-weight:600;' +
+          'background:rgba(248,113,113,.12);color:#F87171;border:1px solid rgba(248,113,113,.2);">' + escapeHtml(vqStrengths[vsi]) + '</span>';
+      }
+      html += '</div>';
+    }
+
+    // Badges (intent + lean + language)
+    html +=
+      '<div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px;">' +
+        (intentLabel ?
+          '<span style="padding:2px 8px;border-radius:10px;font-size:9px;font-weight:600;' +
+            'background:' + intentColor + '12;color:' + intentColor + ';border:1px solid ' + intentColor + '25;">' +
+            intentLabel + (intentConf ? ' \u00B7 ' + intentConf : '') +
+          '</span>' : '') +
+        '<span style="padding:2px 8px;border-radius:10px;font-size:9px;font-weight:600;' +
+          'background:' + leanColor + '15;color:' + leanColor + ';border:1px solid ' + leanColor + '25;">' +
+          leanLabel + (confidence ? ' \u00B7 ' + confidence : '') +
+        '</span>' +
+        (detectedLang && detectedLang !== "en" ?
+          '<span style="padding:2px 6px;border-radius:10px;font-size:8px;font-weight:600;' +
+            'background:rgba(148,163,184,0.1);color:' + TEXT_FAINT + ';border:1px solid ' + BORDER + ';" title="Detected language">' +
+            escapeHtml(detectedLang.toUpperCase()) +
+          '</span>' : '') +
+      '</div>';
+
+    // Claim summary
+    if (claims.length > 0) {
+      html +=
+        '<div style="margin-bottom:10px;padding-bottom:10px;border-bottom:1px solid ' + BORDER + ';">' +
+          '<div style="font-size:10px;color:' + TEXT_MUTED + ';margin-bottom:6px;">' + claims.length + ' claim' + (claims.length !== 1 ? 's' : '') + ' identified</div>' +
+          '<div style="display:flex;flex-wrap:wrap;gap:4px;">' +
+            (highCount ? '<span style="padding:1px 6px;border-radius:3px;font-size:9px;font-weight:600;background:' + SEV_PILL.high + ';color:' + SEV_PILL_TEXT.high + ';">' + highCount + ' high</span>' : '') +
+            (medCount ? '<span style="padding:1px 6px;border-radius:3px;font-size:9px;font-weight:600;background:' + SEV_PILL.medium + ';color:' + SEV_PILL_TEXT.medium + ';">' + medCount + ' med</span>' : '') +
+            (lowCount ? '<span style="padding:1px 6px;border-radius:3px;font-size:9px;font-weight:600;background:' + SEV_PILL.low + ';color:' + SEV_PILL_TEXT.low + ';">' + lowCount + ' low</span>' : '') +
+            (verifiedCount ? '<span style="padding:1px 6px;border-radius:3px;font-size:9px;font-weight:600;background:' + TYPE_PILL.verified + ';color:' + TYPE_PILL_TEXT.verified + ';">' + verifiedCount + ' verified</span>' : '') +
+            (neutralCount ? '<span style="padding:1px 6px;border-radius:3px;font-size:9px;font-weight:600;background:' + TYPE_PILL.neutral + ';color:' + TYPE_PILL_TEXT.neutral + ';">' + neutralCount + ' noted</span>' : '') +
+          '</div>' +
+        '</div>';
+    } else {
+      html += '<div style="margin-bottom:10px;font-size:10px;color:#4ADE80;">No claims identified</div>';
+    }
+
+    // Lean bar
+    if (leanScore !== null) {
+      var lsBarPct = ((leanScore + 1) / 2) * 100;
+      html +=
+        '<div style="margin-bottom:10px;padding-bottom:10px;border-bottom:1px solid ' + BORDER + ';">' +
+          '<div style="font-size:9px;color:' + TEXT_FAINT + ';margin-bottom:4px;">Article Lean</div>' +
+          '<div style="display:flex;align-items:center;gap:6px;">' +
+            '<div style="flex:1;height:5px;border-radius:3px;background:linear-gradient(to right,#7CB3E0,#94A3B8,#D98282);position:relative;">' +
+              '<div style="position:absolute;top:-3px;left:calc(' + lsBarPct + '% - 5px);width:11px;height:11px;border-radius:50%;background:' + TEXT_HEAD + ';border:2px solid white;box-shadow:0 1px 3px rgba(0,0,0,.2);"></div>' +
+            '</div>' +
+            '<span style="font-size:10px;color:' + TEXT_MUTED + ';font-weight:600;min-width:28px;text-align:right;">' +
+              (leanScore > 0 ? '+' : '') + leanScore.toFixed(1) +
+            '</span>' +
+          '</div>' +
+        '</div>';
+    }
+
+    // Polarization gauge
+    if (polarization !== null) {
+      var polColor = polarization > 75 ? "#F87171" : polarization > 50 ? "#FBBF24" : polarization > 20 ? "#60A5FA" : "#4ADE80";
+      var polLabel = polarization > 75 ? "Extreme" : polarization > 50 ? "High" : polarization > 20 ? "Moderate" : "Low";
+      html +=
+        '<div style="margin-bottom:10px;padding-bottom:10px;border-bottom:1px solid ' + BORDER + ';">' +
+          '<div style="font-size:9px;color:' + TEXT_FAINT + ';margin-bottom:4px;">Polarization</div>' +
+          '<div style="display:flex;align-items:center;gap:6px;">' +
+            '<div style="flex:1;height:5px;border-radius:3px;background:rgba(0,0,0,.06);position:relative;">' +
+              '<div style="height:100%;width:' + polarization + '%;border-radius:3px;background:' + polColor + ';"></div>' +
+            '</div>' +
+            '<span style="font-size:10px;color:' + polColor + ';font-weight:600;">' + polLabel + '</span>' +
+          '</div>' +
+        '</div>';
+    }
+
+    // Intent callout
+    if (intent.explanation && (intentType === "persuasion" || intentType === "manipulation")) {
+      html +=
+        '<div style="margin-bottom:10px;padding:6px 10px;border-radius:6px;background:' + (INTENT_BG[intentType] || "transparent") + ';' +
+          'border-left:2px solid ' + intentColor + ';font-size:10px;color:' + TEXT_MUTED + ';line-height:1.4;">' +
+          '<strong style="color:' + intentColor + ';">Intent: </strong>' + escapeHtml(intent.explanation) +
+        '</div>';
+    }
+
+    // Claim breakdown bar
     if (claims.length > 0) {
       var total = claims.length;
       var cTypes = {};
       claims.forEach(function (c) { cTypes[c.type] = (cTypes[c.type] || 0) + 1; });
-      // Build stacked bar segments
-      var typeColors = {
+      var typeColorsMap = {
         contentious: "#FBBF24", unsupported: "#F87171", misleading: "#F87171",
         opinion_as_fact: "#FBBF24", omission: "#D4A84A",
         verified: "#4ADE80", neutral: "#94A3B8"
       };
-      var typeLabels = {
+      var typeLabelsMap = {
         contentious: "Contentious", unsupported: "Unsupported", misleading: "Misleading",
         opinion_as_fact: "Opinion as fact", omission: "Omission",
         verified: "Verified", neutral: "Neutral"
@@ -1239,13 +1203,12 @@
         var t = typeOrder[ti];
         if (!cTypes[t]) continue;
         var pct = (cTypes[t] / total * 100).toFixed(1);
-        barSegments += '<div style="width:' + pct + '%;height:100%;background:' + (typeColors[t] || "#94A3B8") + ';"></div>';
-        legendParts += '<span style="display:flex;align-items:center;gap:3px;">' +
-          '<span style="width:6px;height:6px;border-radius:50%;background:' + (typeColors[t] || "#94A3B8") + ';"></span>' +
-          '<span>' + cTypes[t] + ' ' + (typeLabels[t] || t) + '</span></span>';
+        barSegments += '<div style="width:' + pct + '%;height:100%;background:' + (typeColorsMap[t] || "#94A3B8") + ';"></div>';
+        legendParts += '<div style="display:flex;align-items:center;gap:4px;font-size:9px;color:' + TEXT_MUTED + ';">' +
+          '<span style="width:6px;height:6px;border-radius:50%;background:' + (typeColorsMap[t] || "#94A3B8") + ';flex-shrink:0;"></span>' +
+          '<span>' + cTypes[t] + ' ' + (typeLabelsMap[t] || t) + '</span></div>';
       }
 
-      // Reading tip based on analysis signals
       var tipText = "";
       if (highCount >= 3) tipText = "Several claims need scrutiny \u2014 cross-reference before sharing.";
       else if (intentType === "manipulation") tipText = "This article uses manipulative framing \u2014 read critically.";
@@ -1253,37 +1216,189 @@
       else if (verifiedCount >= total * 0.5) tipText = "Most claims are well-sourced \u2014 a relatively reliable piece.";
       else if (highCount === 0) tipText = "No major red flags found \u2014 standard reporting.";
 
-      row5Html =
-        '<div style="margin-top:8px;padding-top:8px;border-top:1px solid ' + BORDER + ';">' +
-          // Claim breakdown bar
-          '<div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;">' +
-            '<span style="font-size:9px;color:' + TEXT_FAINT + ';white-space:nowrap;">Claims</span>' +
-            '<div style="flex:1;height:6px;border-radius:3px;overflow:hidden;display:flex;background:rgba(0,0,0,.04);">' +
-              barSegments +
-            '</div>' +
+      html +=
+        '<div style="margin-bottom:10px;padding-bottom:10px;border-bottom:1px solid ' + BORDER + ';">' +
+          '<div style="font-size:9px;color:' + TEXT_FAINT + ';margin-bottom:4px;">Claim Breakdown</div>' +
+          '<div style="height:6px;border-radius:3px;overflow:hidden;display:flex;background:rgba(0,0,0,.04);margin-bottom:6px;">' +
+            barSegments +
           '</div>' +
-          // Legend
-          '<div style="display:flex;flex-wrap:wrap;gap:8px;font-size:9px;color:' + TEXT_MUTED + ';margin-bottom:' + (tipText ? '6px' : '0') + ';">' +
+          '<div style="display:flex;flex-direction:column;gap:2px;margin-bottom:' + (tipText ? '6px' : '0') + ';">' +
             legendParts +
           '</div>' +
-          // Reading tip
           (tipText ?
-            '<div style="font-size:10px;color:' + TEXT_BODY + ';padding:5px 8px;border-radius:4px;' +
-              'background:rgba(0,0,0,.02);border-left:2px solid ' + (highCount >= 3 || intentType === "manipulation" ? "#F87171" : intentType === "persuasion" ? "#FBBF24" : "#4ADE80") + ';">' +
+            '<div style="font-size:9px;color:' + TEXT_BODY + ';padding:5px 8px;border-radius:4px;' +
+              'background:rgba(0,0,0,.02);border-left:2px solid ' + (highCount >= 3 || intentType === "manipulation" ? "#F87171" : intentType === "persuasion" ? "#FBBF24" : "#4ADE80") + ';line-height:1.35;">' +
               '\uD83D\uDCA1 ' + tipText +
             '</div>' : '') +
         '</div>';
     }
 
-    banner.innerHTML = row1Html + row2Html + row3Html + row4Html + row5Html;
+    // Deep Analysis link
+    html +=
+      '<div style="text-align:center;">' +
+        '<button id="spectrum-sidebar-deep" style="width:100%;padding:8px 10px;border-radius:8px;cursor:pointer;' +
+          'font-size:11px;font-weight:600;font-family:' + FONT_SANS + ';letter-spacing:.3px;' +
+          'background:linear-gradient(135deg,rgba(99,102,241,0.08),rgba(139,92,246,0.08));' +
+          'border:1px solid rgba(99,102,241,0.2);color:#818CF8;transition:all .2s;">' +
+          '\u2728 Full Deep Analysis' +
+        '</button>' +
+      '</div>';
 
-    var articleEl = document.querySelector("article, [role='main'], main, .article-body, .story-body");
-    if (articleEl) {
-      articleEl.insertBefore(banner, articleEl.firstChild);
-    } else {
-      var h1 = document.querySelector("h1");
-      if (h1 && h1.parentNode) h1.parentNode.insertBefore(banner, h1.nextSibling);
+    // --- Create sidebar element ---
+    var isNarrow = window.innerWidth < 1200;
+    var sidebar = document.createElement("div");
+    sidebar.id = "spectrum-sidebar";
+    sidebar.style.cssText =
+      "position:fixed;z-index:2147483640;right:20px;top:80px;width:280px;" +
+      "max-height:calc(100vh - 120px);overflow-y:auto;overflow-x:hidden;" +
+      "background:" + PANEL_BG + ";backdrop-filter:blur(12px);color:" + TEXT_HEAD + ";" +
+      "padding:14px 16px;font-family:" + FONT_SANS + ";" +
+      "font-size:11px;border-radius:10px;border:1px solid " + BORDER + ";" +
+      "box-shadow:0 4px 24px rgba(0,0,0,.1),0 1px 6px rgba(0,0,0,.04);" +
+      "opacity:0;transform:translateX(20px);transition:opacity .3s ease,transform .3s ease;";
+
+    var styleEl = document.createElement("style");
+    styleEl.textContent =
+      "#spectrum-sidebar::-webkit-scrollbar{width:3px}" +
+      "#spectrum-sidebar::-webkit-scrollbar-thumb{background:rgba(0,0,0,.1);border-radius:2px}" +
+      "#spectrum-sidebar::-webkit-scrollbar-track{background:transparent}";
+    sidebar.appendChild(styleEl);
+
+    var contentDiv = document.createElement("div");
+    contentDiv.innerHTML = html;
+    sidebar.appendChild(contentDiv);
+    document.body.appendChild(sidebar);
+
+    // Animate in
+    requestAnimationFrame(function () {
+      requestAnimationFrame(function () {
+        sidebar.style.opacity = "1";
+        sidebar.style.transform = "translateX(0)";
+      });
+    });
+
+    // Hide floating badge
+    removeFloatingBadge();
+
+    // Minimize button
+    var minBtn = sidebar.querySelector("#spectrum-sidebar-min");
+    if (minBtn) {
+      minBtn.addEventListener("mouseenter", function () { this.style.background = "rgba(0,0,0,.05)"; });
+      minBtn.addEventListener("mouseleave", function () { this.style.background = "transparent"; });
+      minBtn.addEventListener("click", function () { collapseSidebar(); });
     }
+
+    // Deep Analysis button
+    var deepBtn = sidebar.querySelector("#spectrum-sidebar-deep");
+    if (deepBtn) {
+      deepBtn.addEventListener("click", function () {
+        if (!__lastArticleData) return;
+        chrome.runtime.sendMessage({
+          type: "OPEN_DEEP_ANALYSIS",
+          data: {
+            articleText: __lastArticleData.text,
+            articleUrl: __lastArticleData.url || window.location.href,
+            articleTitle: __lastArticleData.title || document.title,
+            sourceDomain: __lastArticleData.domain || window.location.hostname,
+            images: __lastArticleData.images || [],
+            imageDataUrls: __lastArticleData.imageDataUrls || [],
+            author: __lastArticleData.author || null,
+            isYouTube: __lastArticleData.isYouTube || false,
+            transcript: __lastArticleData.transcript || null,
+            fastAnalysis: __lastAnalysis || null,
+          }
+        }).catch(function () {});
+      });
+      deepBtn.addEventListener("mouseenter", function () {
+        this.style.background = "linear-gradient(135deg,rgba(99,102,241,0.14),rgba(139,92,246,0.14))";
+        this.style.borderColor = "rgba(99,102,241,0.35)";
+      });
+      deepBtn.addEventListener("mouseleave", function () {
+        this.style.background = "linear-gradient(135deg,rgba(99,102,241,0.08),rgba(139,92,246,0.08))";
+        this.style.borderColor = "rgba(99,102,241,0.2)";
+      });
+    }
+
+    // Narrow viewport → collapse immediately
+    if (isNarrow) {
+      sidebar.style.opacity = "0";
+      sidebar.style.transform = "translateX(20px)";
+      setTimeout(function () { if (sidebar.parentNode) sidebar.remove(); }, 10);
+      showSidebarPill();
+    }
+
+    // Resize handler
+    if (__sidebarResizeHandler) window.removeEventListener("resize", __sidebarResizeHandler);
+    __sidebarResizeHandler = function () {
+      var narrow = window.innerWidth < 1200;
+      var sb = document.getElementById("spectrum-sidebar");
+      var pill = document.getElementById("spectrum-sidebar-pill");
+      if (narrow && sb) { collapseSidebar(); }
+      else if (!narrow && pill && !sb) { expandSidebar(); }
+    };
+    window.addEventListener("resize", __sidebarResizeHandler);
+  }
+
+  function collapseSidebar() {
+    var sidebar = document.getElementById("spectrum-sidebar");
+    if (sidebar) {
+      sidebar.style.opacity = "0";
+      sidebar.style.transform = "translateX(20px)";
+      setTimeout(function () { if (sidebar.parentNode) sidebar.remove(); }, 300);
+    }
+    showSidebarPill();
+  }
+
+  function expandSidebar() {
+    var pill = document.getElementById("spectrum-sidebar-pill");
+    if (pill) pill.remove();
+    if (__sidebarAnalysis) injectAnalysisSidebar(__sidebarAnalysis);
+  }
+
+  function showSidebarPill() {
+    var existing = document.getElementById("spectrum-sidebar-pill");
+    if (existing) existing.remove();
+    if (!__sidebarAnalysis) return;
+    var analysis = __sidebarAnalysis;
+    var claims = analysis.claims || [];
+    var lean = (analysis.overallLean || "").replace(/[- ]/g, "").toLowerCase();
+    var leanColor = LEAN_COLORS[lean] || "#94A3B8";
+    var leanLabel = LEAN_LABELS[lean] || analysis.overallLean || "";
+    var badgeColor = claims.length > 0 ? "#B8963E" : "#5E8AB4";
+
+    var pill = document.createElement("div");
+    pill.id = "spectrum-sidebar-pill";
+    pill.style.cssText =
+      "position:fixed;z-index:2147483640;bottom:20px;right:20px;" +
+      "background:" + PANEL_BG + ";backdrop-filter:blur(12px);color:" + TEXT_BODY + ";" +
+      "padding:8px 16px;border-radius:24px;font-size:11px;font-weight:500;" +
+      "font-family:" + FONT_SANS + ";box-shadow:0 2px 16px rgba(0,0,0,.1);" +
+      "border:1px solid " + BORDER + ";display:flex;align-items:center;gap:8px;" +
+      "cursor:pointer;transition:all .2s;opacity:0;transform:translateY(10px);";
+
+    pill.innerHTML =
+      '<span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:' + badgeColor + ';"></span>' +
+      '<span>SPECTRUM \u00B7 ' + claims.length + ' claim' + (claims.length !== 1 ? 's' : '') + '</span>' +
+      '<span style="padding:1px 7px;border-radius:10px;font-size:9px;font-weight:600;' +
+        'background:' + leanColor + '15;color:' + leanColor + ';border:1px solid ' + leanColor + '25;">' + leanLabel + '</span>';
+
+    pill.addEventListener("mouseenter", function () {
+      pill.style.boxShadow = "0 4px 20px rgba(0,0,0,.15)";
+      pill.style.transform = "translateY(-2px)";
+    });
+    pill.addEventListener("mouseleave", function () {
+      pill.style.boxShadow = "0 2px 16px rgba(0,0,0,.1)";
+      pill.style.transform = "translateY(0)";
+    });
+    pill.addEventListener("click", function () { expandSidebar(); });
+
+    document.body.appendChild(pill);
+    requestAnimationFrame(function () {
+      requestAnimationFrame(function () {
+        pill.style.opacity = "1";
+        pill.style.transform = "translateY(0)";
+      });
+    });
   }
 
   // ============================================================
@@ -1314,12 +1429,7 @@
     container.innerHTML = html;
 
     if (articleEl && articleEl !== document.body) {
-      var banner = document.getElementById("spectrum-banner");
-      if (banner && banner.parentNode === articleEl) {
-        articleEl.insertBefore(container, banner.nextSibling);
-      } else {
-        articleEl.insertBefore(container, articleEl.firstChild);
-      }
+      articleEl.insertBefore(container, articleEl.firstChild);
     }
   }
 
@@ -1350,17 +1460,12 @@
     });
     container.innerHTML = html;
 
-    // Insert after bias notes, or after banner
+    // Insert after bias notes, or at top
     var biasNotes = document.getElementById("spectrum-bias-notes");
     if (biasNotes && biasNotes.parentNode) {
       biasNotes.parentNode.insertBefore(container, biasNotes.nextSibling);
     } else if (articleEl && articleEl !== document.body) {
-      var banner = document.getElementById("spectrum-banner");
-      if (banner && banner.parentNode === articleEl) {
-        articleEl.insertBefore(container, banner.nextSibling);
-      } else {
-        articleEl.insertBefore(container, articleEl.firstChild);
-      }
+      articleEl.insertBefore(container, articleEl.firstChild);
     }
   }
 
@@ -1405,17 +1510,14 @@
     });
     container.innerHTML = html;
 
-    // Insert after hidden biases, bias notes, or banner
+    // Insert after hidden biases, bias notes, or at top
     var hiddenBiases = document.getElementById("spectrum-hidden-biases");
     var biasNotes = document.getElementById("spectrum-bias-notes");
     var insertAfter = hiddenBiases || biasNotes;
     if (insertAfter && insertAfter.parentNode) {
       insertAfter.parentNode.insertBefore(container, insertAfter.nextSibling);
     } else if (articleEl && articleEl !== document.body) {
-      var banner = document.getElementById("spectrum-banner");
-      if (banner && banner.parentNode === articleEl) {
-        articleEl.insertBefore(container, banner.nextSibling);
-      }
+      articleEl.insertBefore(container, articleEl.firstChild);
     }
   }
 
@@ -1450,10 +1552,7 @@
     if (insertAfter && insertAfter.parentNode) {
       insertAfter.parentNode.insertBefore(container, insertAfter.nextSibling);
     } else if (articleEl && articleEl !== document.body) {
-      var banner = document.getElementById("spectrum-banner");
-      if (banner && banner.parentNode === articleEl) {
-        articleEl.insertBefore(container, banner.nextSibling);
-      }
+      articleEl.insertBefore(container, articleEl.firstChild);
     }
   }
 
@@ -1461,6 +1560,9 @@
   // FLOATING BADGE
   // ============================================================
   function showFloatingBadge(text, color, detection) {
+    // Don't show badge if sidebar is handling it
+    if (document.getElementById("spectrum-sidebar")) return;
+
     var badge = document.getElementById("spectrum-fbadge");
     if (!badge) {
       badge = document.createElement("div");
@@ -1503,8 +1605,10 @@
       while (el.firstChild) parent.insertBefore(el.firstChild, el);
       parent.removeChild(el);
     });
-    var banner = document.getElementById("spectrum-banner");
-    if (banner) banner.remove();
+    var sidebar = document.getElementById("spectrum-sidebar");
+    if (sidebar) sidebar.remove();
+    var sidebarPill = document.getElementById("spectrum-sidebar-pill");
+    if (sidebarPill) sidebarPill.remove();
     var biasNotes = document.getElementById("spectrum-bias-notes");
     if (biasNotes) biasNotes.remove();
     var hiddenBiases = document.getElementById("spectrum-hidden-biases");
