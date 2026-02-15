@@ -696,17 +696,10 @@
     }
 
     panel.innerHTML =
-      '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;font-family:' + FONT_SANS + ';">' +
-        '<div style="display:flex;align-items:center;gap:8px;">' +
-          '<span style="display:inline-block;padding:2px 8px;border-radius:4px;font-size:10px;' +
-            'font-weight:600;text-transform:uppercase;letter-spacing:.5px;' +
-            'background:' + pillBg + ';color:' + pillText + ';">' + escapeHtml(typeLabel) + '</span>' +
-          '<span style="font-size:11px;color:' + TEXT_FAINT + ';">' + sevLabel + ' severity</span>' +
-        '</div>' +
+      '<div style="display:flex;justify-content:flex-end;margin-bottom:4px;font-family:' + FONT_SANS + ';">' +
         '<span class="spectrum-panel-close" style="cursor:pointer;color:' + TEXT_FAINT + ';font-size:16px;line-height:1;padding:2px 6px;border-radius:4px;transition:background .15s;">\u00D7</span>' +
       '</div>' +
       cwHtml +
-      '<div style="color:' + TEXT_BODY + ';margin-bottom:6px;">' + escapeHtml(claim.explanation || "") + '</div>' +
       sourcesHtml +
       dataHtml +
       gapsHtml +
@@ -828,13 +821,8 @@
 
     wrapper.addEventListener("click", function (e) {
       e.stopPropagation();
-      var existing = document.getElementById("spectrum-claim-bubble");
-      if (existing) {
-        var wasThisOne = existing.dataset.idx === String(index);
-        dismissBubble();
-        if (wasThisOne) return; // toggle off
-      }
-      showClaimBubble(wrapper, claim, index);
+      dismissBubble();
+      expandInlinePanel(wrapper, claim, index);
     });
   }
 
