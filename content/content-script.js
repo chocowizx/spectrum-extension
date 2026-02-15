@@ -1057,7 +1057,7 @@
     // Header
     html +=
       '<div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;">' +
-        '<span style="font-weight:700;letter-spacing:1.5px;font-size:11px;color:' + TEXT_FAINT + ';">SPECTRUM</span>' +
+        '<span style="font-weight:700;letter-spacing:1.5px;font-size:12px;color:' + TEXT_FAINT + ';">SPECTRUM</span>' +
         preAnalyzedBadge +
         '<span id="spectrum-sidebar-min" style="margin-left:auto;cursor:pointer;font-size:18px;color:' + TEXT_FAINT + ';line-height:1;width:22px;height:22px;display:flex;align-items:center;justify-content:center;border-radius:4px;transition:background .15s;" title="Minimize">\u2212</span>' +
       '</div>';
@@ -1074,18 +1074,18 @@
       html +=
         '<div style="margin-bottom:12px;padding-bottom:10px;border-bottom:1px solid ' + BORDER + ';">' +
           '<div style="display:flex;align-items:baseline;gap:4px;margin-bottom:8px;">' +
-            '<span style="font-size:36px;font-weight:800;color:' + vqColor + ';line-height:1;">' + vqScore + '</span>' +
-            '<span style="font-size:13px;color:' + TEXT_FAINT + ';">/100</span>' +
-            '<span style="font-size:12px;font-weight:600;color:' + vqColor + ';margin-left:auto;">' + vqLabel + '</span>' +
+            '<span style="font-size:40px;font-weight:800;color:' + vqColor + ';line-height:1;">' + vqScore + '</span>' +
+            '<span style="font-size:14px;color:' + TEXT_FAINT + ';">/100</span>' +
+            '<span style="font-size:13px;font-weight:600;color:' + vqColor + ';margin-left:auto;">' + vqLabel + '</span>' +
           '</div>' +
           '<div style="position:relative;margin-bottom:6px;">' +
             '<div style="height:6px;border-radius:3px;background:linear-gradient(to right,#60A5FA,#94A3B8 50%,#F87171);"></div>' +
             '<div style="position:absolute;bottom:-3px;left:calc(' + vqScore + '% - 5px);width:10px;height:10px;border-radius:50%;background:' + vqColor + ';border:2px solid white;box-shadow:0 1px 3px rgba(0,0,0,.25);"></div>' +
           '</div>' +
-          '<div style="display:flex;justify-content:space-between;font-size:9px;color:' + TEXT_FAINT + ';">' +
+          '<div style="display:flex;justify-content:space-between;font-size:11px;color:' + TEXT_FAINT + ';">' +
             '<span>\uD83D\uDD35 Poor</span><span>Solid \uD83D\uDD34</span>' +
           '</div>' +
-          '<div style="font-size:10px;color:' + TEXT_FAINT + ';font-style:italic;margin-top:4px;">At a glance \u2014 may change with deep analysis.</div>' +
+          '<div style="font-size:11px;color:' + TEXT_FAINT + ';font-style:italic;margin-top:4px;">At a glance \u2014 may change with deep analysis.</div>' +
         '</div>';
     }
 
@@ -1093,11 +1093,11 @@
     if (vqFlags.length > 0 || vqStrengths.length > 0) {
       html += '<div style="margin-bottom:10px;padding-bottom:10px;border-bottom:1px solid ' + BORDER + ';">';
       for (var vfi = 0; vfi < vqFlags.length; vfi++) {
-        html += '<span style="display:inline-block;margin:0 4px 4px 0;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:600;' +
+        html += '<span style="display:inline-block;margin:0 4px 5px 0;padding:3px 10px;border-radius:10px;font-size:12px;font-weight:600;' +
           'background:rgba(96,165,250,.12);color:#60A5FA;border:1px solid rgba(96,165,250,.2);">' + escapeHtml(vqFlags[vfi]) + '</span>';
       }
       for (var vsi = 0; vsi < vqStrengths.length; vsi++) {
-        html += '<span style="display:inline-block;margin:0 4px 4px 0;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:600;' +
+        html += '<span style="display:inline-block;margin:0 4px 5px 0;padding:3px 10px;border-radius:10px;font-size:12px;font-weight:600;' +
           'background:rgba(248,113,113,.12);color:#F87171;border:1px solid rgba(248,113,113,.2);">' + escapeHtml(vqStrengths[vsi]) + '</span>';
       }
       html += '</div>';
@@ -1107,16 +1107,16 @@
     html +=
       '<div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px;">' +
         (intentLabel ?
-          '<span style="padding:2px 8px;border-radius:10px;font-size:11px;font-weight:600;' +
+          '<span style="padding:3px 10px;border-radius:10px;font-size:12px;font-weight:600;' +
             'background:' + intentColor + '12;color:' + intentColor + ';border:1px solid ' + intentColor + '25;">' +
             intentLabel + (intentConf ? ' \u00B7 ' + intentConf : '') +
           '</span>' : '') +
-        '<span style="padding:2px 8px;border-radius:10px;font-size:11px;font-weight:600;' +
+        '<span style="padding:3px 10px;border-radius:10px;font-size:12px;font-weight:600;' +
           'background:' + leanColor + '15;color:' + leanColor + ';border:1px solid ' + leanColor + '25;">' +
           leanLabel + (confidence ? ' \u00B7 ' + confidence : '') +
         '</span>' +
         (detectedLang && detectedLang !== "en" ?
-          '<span style="padding:2px 6px;border-radius:10px;font-size:10px;font-weight:600;' +
+          '<span style="padding:3px 8px;border-radius:10px;font-size:11px;font-weight:600;' +
             'background:rgba(148,163,184,0.1);color:' + TEXT_FAINT + ';border:1px solid ' + BORDER + ';" title="Detected language">' +
             escapeHtml(detectedLang.toUpperCase()) +
           '</span>' : '') +
@@ -1126,17 +1126,17 @@
     if (claims.length > 0) {
       html +=
         '<div style="margin-bottom:10px;padding-bottom:10px;border-bottom:1px solid ' + BORDER + ';">' +
-          '<div style="font-size:12px;color:' + TEXT_MUTED + ';margin-bottom:6px;">' + claims.length + ' claim' + (claims.length !== 1 ? 's' : '') + ' identified</div>' +
+          '<div style="font-size:13px;color:' + TEXT_MUTED + ';margin-bottom:6px;">' + claims.length + ' claim' + (claims.length !== 1 ? 's' : '') + ' identified</div>' +
           '<div style="display:flex;flex-wrap:wrap;gap:4px;">' +
-            (highCount ? '<span style="padding:1px 6px;border-radius:3px;font-size:11px;font-weight:600;background:' + SEV_PILL.high + ';color:' + SEV_PILL_TEXT.high + ';">' + highCount + ' high</span>' : '') +
-            (medCount ? '<span style="padding:1px 6px;border-radius:3px;font-size:11px;font-weight:600;background:' + SEV_PILL.medium + ';color:' + SEV_PILL_TEXT.medium + ';">' + medCount + ' med</span>' : '') +
-            (lowCount ? '<span style="padding:1px 6px;border-radius:3px;font-size:11px;font-weight:600;background:' + SEV_PILL.low + ';color:' + SEV_PILL_TEXT.low + ';">' + lowCount + ' low</span>' : '') +
-            (verifiedCount ? '<span style="padding:1px 6px;border-radius:3px;font-size:11px;font-weight:600;background:' + TYPE_PILL.verified + ';color:' + TYPE_PILL_TEXT.verified + ';">' + verifiedCount + ' verified</span>' : '') +
-            (neutralCount ? '<span style="padding:1px 6px;border-radius:3px;font-size:11px;font-weight:600;background:' + TYPE_PILL.neutral + ';color:' + TYPE_PILL_TEXT.neutral + ';">' + neutralCount + ' noted</span>' : '') +
+            (highCount ? '<span style="padding:2px 8px;border-radius:3px;font-size:12px;font-weight:600;background:' + SEV_PILL.high + ';color:' + SEV_PILL_TEXT.high + ';">' + highCount + ' high</span>' : '') +
+            (medCount ? '<span style="padding:2px 8px;border-radius:3px;font-size:12px;font-weight:600;background:' + SEV_PILL.medium + ';color:' + SEV_PILL_TEXT.medium + ';">' + medCount + ' med</span>' : '') +
+            (lowCount ? '<span style="padding:2px 8px;border-radius:3px;font-size:12px;font-weight:600;background:' + SEV_PILL.low + ';color:' + SEV_PILL_TEXT.low + ';">' + lowCount + ' low</span>' : '') +
+            (verifiedCount ? '<span style="padding:2px 8px;border-radius:3px;font-size:12px;font-weight:600;background:' + TYPE_PILL.verified + ';color:' + TYPE_PILL_TEXT.verified + ';">' + verifiedCount + ' verified</span>' : '') +
+            (neutralCount ? '<span style="padding:2px 8px;border-radius:3px;font-size:12px;font-weight:600;background:' + TYPE_PILL.neutral + ';color:' + TYPE_PILL_TEXT.neutral + ';">' + neutralCount + ' noted</span>' : '') +
           '</div>' +
         '</div>';
     } else {
-      html += '<div style="margin-bottom:10px;font-size:12px;color:#4ADE80;">No claims identified</div>';
+      html += '<div style="margin-bottom:10px;font-size:13px;color:#4ADE80;">No claims identified</div>';
     }
 
     // Lean bar
@@ -1144,12 +1144,12 @@
       var lsBarPct = ((leanScore + 1) / 2) * 100;
       html +=
         '<div style="margin-bottom:10px;padding-bottom:10px;border-bottom:1px solid ' + BORDER + ';">' +
-          '<div style="font-size:11px;color:' + TEXT_FAINT + ';margin-bottom:4px;">Article Lean</div>' +
+          '<div style="font-size:12px;color:' + TEXT_FAINT + ';margin-bottom:4px;">Article Lean</div>' +
           '<div style="display:flex;align-items:center;gap:6px;">' +
             '<div style="flex:1;height:5px;border-radius:3px;background:linear-gradient(to right,#7CB3E0,#94A3B8,#D98282);position:relative;">' +
               '<div style="position:absolute;top:-3px;left:calc(' + lsBarPct + '% - 5px);width:11px;height:11px;border-radius:50%;background:' + TEXT_HEAD + ';border:2px solid white;box-shadow:0 1px 3px rgba(0,0,0,.2);"></div>' +
             '</div>' +
-            '<span style="font-size:12px;color:' + TEXT_MUTED + ';font-weight:600;min-width:28px;text-align:right;">' +
+            '<span style="font-size:13px;color:' + TEXT_MUTED + ';font-weight:600;min-width:28px;text-align:right;">' +
               (leanScore > 0 ? '+' : '') + leanScore.toFixed(1) +
             '</span>' +
           '</div>' +
@@ -1162,12 +1162,12 @@
       var polLabel = polarization > 75 ? "Extreme" : polarization > 50 ? "High" : polarization > 20 ? "Moderate" : "Low";
       html +=
         '<div style="margin-bottom:10px;padding-bottom:10px;border-bottom:1px solid ' + BORDER + ';">' +
-          '<div style="font-size:11px;color:' + TEXT_FAINT + ';margin-bottom:4px;">Polarization</div>' +
+          '<div style="font-size:12px;color:' + TEXT_FAINT + ';margin-bottom:4px;">Polarization</div>' +
           '<div style="display:flex;align-items:center;gap:6px;">' +
             '<div style="flex:1;height:5px;border-radius:3px;background:rgba(0,0,0,.06);position:relative;">' +
               '<div style="height:100%;width:' + polarization + '%;border-radius:3px;background:' + polColor + ';"></div>' +
             '</div>' +
-            '<span style="font-size:12px;color:' + polColor + ';font-weight:600;">' + polLabel + '</span>' +
+            '<span style="font-size:13px;color:' + polColor + ';font-weight:600;">' + polLabel + '</span>' +
           '</div>' +
         '</div>';
     }
@@ -1176,7 +1176,7 @@
     if (intent.explanation && (intentType === "persuasion" || intentType === "manipulation")) {
       html +=
         '<div style="margin-bottom:10px;padding:6px 10px;border-radius:6px;background:' + (INTENT_BG[intentType] || "transparent") + ';' +
-          'border-left:2px solid ' + intentColor + ';font-size:12px;color:' + TEXT_MUTED + ';line-height:1.4;">' +
+          'border-left:2px solid ' + intentColor + ';font-size:13px;color:' + TEXT_MUTED + ';line-height:1.4;">' +
           '<strong style="color:' + intentColor + ';">Intent: </strong>' + escapeHtml(intent.explanation) +
         '</div>';
     }
@@ -1204,7 +1204,7 @@
         if (!cTypes[t]) continue;
         var pct = (cTypes[t] / total * 100).toFixed(1);
         barSegments += '<div style="width:' + pct + '%;height:100%;background:' + (typeColorsMap[t] || "#94A3B8") + ';"></div>';
-        legendParts += '<div style="display:flex;align-items:center;gap:4px;font-size:11px;color:' + TEXT_MUTED + ';">' +
+        legendParts += '<div style="display:flex;align-items:center;gap:4px;font-size:12px;color:' + TEXT_MUTED + ';">' +
           '<span style="width:6px;height:6px;border-radius:50%;background:' + (typeColorsMap[t] || "#94A3B8") + ';flex-shrink:0;"></span>' +
           '<span>' + cTypes[t] + ' ' + (typeLabelsMap[t] || t) + '</span></div>';
       }
@@ -1218,7 +1218,7 @@
 
       html +=
         '<div style="margin-bottom:10px;padding-bottom:10px;border-bottom:1px solid ' + BORDER + ';">' +
-          '<div style="font-size:11px;color:' + TEXT_FAINT + ';margin-bottom:4px;">Claim Breakdown</div>' +
+          '<div style="font-size:12px;color:' + TEXT_FAINT + ';margin-bottom:4px;">Claim Breakdown</div>' +
           '<div style="height:6px;border-radius:3px;overflow:hidden;display:flex;background:rgba(0,0,0,.04);margin-bottom:6px;">' +
             barSegments +
           '</div>' +
@@ -1226,7 +1226,7 @@
             legendParts +
           '</div>' +
           (tipText ?
-            '<div style="font-size:11px;color:' + TEXT_BODY + ';padding:5px 8px;border-radius:4px;' +
+            '<div style="font-size:12px;color:' + TEXT_BODY + ';padding:5px 8px;border-radius:4px;' +
               'background:rgba(0,0,0,.02);border-left:2px solid ' + (highCount >= 3 || intentType === "manipulation" ? "#F87171" : intentType === "persuasion" ? "#FBBF24" : "#4ADE80") + ';line-height:1.35;">' +
               '\uD83D\uDCA1 ' + tipText +
             '</div>' : '') +
@@ -1237,7 +1237,7 @@
     html +=
       '<div style="text-align:center;">' +
         '<button id="spectrum-sidebar-deep" style="width:100%;padding:8px 10px;border-radius:8px;cursor:pointer;' +
-          'font-size:12px;font-weight:600;font-family:' + FONT_SANS + ';letter-spacing:.3px;' +
+          'font-size:13px;font-weight:600;font-family:' + FONT_SANS + ';letter-spacing:.3px;' +
           'background:linear-gradient(135deg,rgba(99,102,241,0.08),rgba(139,92,246,0.08));' +
           'border:1px solid rgba(99,102,241,0.2);color:#818CF8;transition:all .2s;">' +
           '\u2728 Full Deep Analysis' +
@@ -1249,11 +1249,11 @@
     var sidebar = document.createElement("div");
     sidebar.id = "spectrum-sidebar";
     sidebar.style.cssText =
-      "position:fixed;z-index:2147483640;right:20px;top:80px;width:280px;" +
+      "position:fixed;z-index:2147483640;right:20px;top:80px;width:320px;" +
       "max-height:calc(100vh - 120px);overflow-y:auto;overflow-x:hidden;" +
       "background:" + PANEL_BG + ";backdrop-filter:blur(12px);color:" + TEXT_HEAD + ";" +
-      "padding:14px 16px;font-family:" + FONT_SANS + ";" +
-      "font-size:13px;border-radius:10px;border:1px solid " + BORDER + ";" +
+      "padding:16px 18px;font-family:" + FONT_SANS + ";" +
+      "font-size:14px;border-radius:10px;border:1px solid " + BORDER + ";" +
       "box-shadow:0 4px 24px rgba(0,0,0,.1),0 1px 6px rgba(0,0,0,.04);" +
       "opacity:0;transform:translateX(20px);transition:opacity .3s ease,transform .3s ease;";
 
