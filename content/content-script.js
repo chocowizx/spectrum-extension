@@ -271,22 +271,26 @@
     if (existing) existing.remove();
     if (marginNotes.length === 0) return;
 
-    // Always show — float over other content (ads, recommended articles)
+    // Position sidebar on document.body to avoid overflow:hidden clipping from article ancestors
     var articleRect = articleEl.getBoundingClientRect();
+    var scrollY = window.scrollY || document.documentElement.scrollTop;
     var rightSpace = window.innerWidth - articleRect.right;
     var leftSpace = articleRect.left;
-    var sidebarWidth = 200;
+    var sidebarWidth = 210;
     var onRight = rightSpace >= leftSpace;
-
-    if (getComputedStyle(articleEl).position === "static") {
-      articleEl.style.position = "relative";
-    }
+    // Need at least ~120px to be useful; hide sidebar if too narrow
+    if (Math.max(rightSpace, leftSpace) < 120) return;
+    // Shrink sidebar to fit available space
+    var availSpace = onRight ? rightSpace - 16 : leftSpace - 16;
+    if (availSpace < sidebarWidth) sidebarWidth = Math.max(120, availSpace);
+    var sidebarLeft = onRight
+      ? articleRect.right + 8
+      : articleRect.left - sidebarWidth - 8;
 
     var sidebar = document.createElement("div");
     sidebar.id = "spectrum-margin-sidebar";
     sidebar.style.cssText =
-      "position:absolute;top:0;width:" + sidebarWidth + "px;" +
-      (onRight ? "left:calc(100% + 6px);" : "right:calc(100% + 6px);") +
+      "position:absolute;top:0;left:" + sidebarLeft + "px;width:" + sidebarWidth + "px;" +
       "font-family:" + FONT_SANS + ";z-index:2147483647;pointer-events:auto;" +
       "overflow:visible;";
 
@@ -303,6 +307,7 @@
 
     var notesWrap = document.createElement("div");
     notesWrap.id = "spectrum-sidebar-notes";
+    notesWrap.style.cssText = "position:relative;";
 
     toggle.addEventListener("click", function () {
       sidebarHidden = !sidebarHidden;
@@ -321,9 +326,9 @@
       var idx = note.index;
       var color = getClaimColor(claim);
 
+      // Page-absolute Y position for this highlight
       var hlRect = hl.getBoundingClientRect();
-      var artRect = articleEl.getBoundingClientRect();
-      var topOffset = hlRect.top - artRect.top + articleEl.scrollTop;
+      var topOffset = hlRect.top + scrollY;
 
       var noteEl = document.createElement("div");
       noteEl.className = "spectrum-margin-note";
@@ -379,14 +384,15 @@
       notesWrap.appendChild(noteEl);
     });
 
-    articleEl.appendChild(sidebar);
+    // Append to body to avoid overflow:hidden clipping from article's ancestors
+    document.body.appendChild(sidebar);
 
     // De-overlap
     var allNotes = notesWrap.querySelectorAll(".spectrum-margin-note");
     for (var i = 1; i < allNotes.length; i++) {
       var prev = allNotes[i - 1];
       var curr = allNotes[i];
-      var prevBottom = parseFloat(prev.style.top) + prev.offsetHeight + 6;
+      var prevBottom = parseFloat(prev.style.top) + prev.offsetHeight + 8;
       var currTop = parseFloat(curr.style.top);
       if (currTop < prevBottom) {
         curr.style.top = prevBottom + "px";
@@ -1076,9 +1082,9 @@
     var verifiedCount = claims.filter(function (c) { return c.type === "verified"; }).length;
     var neutralCount = claims.filter(function (c) { return c.type === "neutral"; }).length;
 
-    // Intent classification (Upgrade #9)
+    // Intent classification (Upgrade #9) — deep has intentClassification.type, fast has intentType
     var intent = analysis.intentClassification || {};
-    var intentType = intent.type || "";
+    var intentType = intent.type || analysis.intentType || "";
     var intentColor = INTENT_COLORS[intentType] || TEXT_FAINT;
     var intentLabel = INTENT_LABELS[intentType] || "";
     var intentConf = intent.confidence ? Math.round(intent.confidence * 100) + "%" : "";
@@ -1202,6 +1208,22 @@
     if (vqIntentType) { vqHasData = true; var vqIP = { informative: 0, advocacy: 5, persuasion: 20, manipulation: 35 }; vqScore -= vqIP[vqIntentType] || 0; if (vqIntentType === "manipulation") vqFlags.push("Manipulative"); else if (vqIntentType === "persuasion") vqFlags.push("Persuasive"); else if (vqIntentType === "informative") vqStrengths.push("Informative"); }
     if (vqPol !== null) { vqScore -= vqPol * 0.15; if (vqPol > 60) vqFlags.push("Polarizing"); else if (vqPol <= 20) vqStrengths.push("Non-polarizing"); }
     if (leanScore !== null) { if (Math.abs(leanScore) > 0.6) vqFlags.push("Strong lean"); else if (Math.abs(leanScore) < 0.15) vqStrengths.push("Balanced"); }
+    // Claim severity scoring (works with fast analysis too)
+    if (claims.length > 0) {
+      vqHasData = true;
+      vqScore -= highCount * 5; vqScore -= medCount * 2;
+      if (highCount >= 3) vqFlags.push(highCount + " high claims");
+      if (verifiedCount >= 3) vqStrengths.push(verifiedCount + " verified");
+      if (highCount === 0 && medCount <= 1) vqStrengths.push("Few issues");
+    }
+    // Lean from string (fast analysis) when no numeric leanScore
+    if (leanScore === null && leanNorm) {
+      var extremeLeans = { farleft: true, farright: true };
+      var moderateLeans = { left: true, right: true };
+      if (extremeLeans[leanNorm]) { vqFlags.push("Strong lean"); vqScore -= 10; }
+      else if (moderateLeans[leanNorm]) vqScore -= 3;
+      else if (leanNorm === "center") vqStrengths.push("Balanced");
+    }
     vqScore = Math.max(0, Math.min(100, Math.round(vqScore)));
 
     if (vqHasData) {
