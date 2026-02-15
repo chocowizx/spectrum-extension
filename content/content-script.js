@@ -1215,7 +1215,67 @@
       row4Html = spectrumHtml;
     }
 
-    banner.innerHTML = row1Html + row2Html + row3Html + row4Html;
+    // Row 5: Claim breakdown bar + reading tip
+    var row5Html = "";
+    if (claims.length > 0) {
+      var total = claims.length;
+      var cTypes = {};
+      claims.forEach(function (c) { cTypes[c.type] = (cTypes[c.type] || 0) + 1; });
+      // Build stacked bar segments
+      var typeColors = {
+        contentious: "#FBBF24", unsupported: "#F87171", misleading: "#F87171",
+        opinion_as_fact: "#FBBF24", omission: "#D4A84A",
+        verified: "#4ADE80", neutral: "#94A3B8"
+      };
+      var typeLabels = {
+        contentious: "Contentious", unsupported: "Unsupported", misleading: "Misleading",
+        opinion_as_fact: "Opinion as fact", omission: "Omission",
+        verified: "Verified", neutral: "Neutral"
+      };
+      var barSegments = "";
+      var legendParts = "";
+      var typeOrder = ["misleading", "unsupported", "contentious", "opinion_as_fact", "omission", "neutral", "verified"];
+      for (var ti = 0; ti < typeOrder.length; ti++) {
+        var t = typeOrder[ti];
+        if (!cTypes[t]) continue;
+        var pct = (cTypes[t] / total * 100).toFixed(1);
+        barSegments += '<div style="width:' + pct + '%;height:100%;background:' + (typeColors[t] || "#94A3B8") + ';"></div>';
+        legendParts += '<span style="display:flex;align-items:center;gap:3px;">' +
+          '<span style="width:6px;height:6px;border-radius:50%;background:' + (typeColors[t] || "#94A3B8") + ';"></span>' +
+          '<span>' + cTypes[t] + ' ' + (typeLabels[t] || t) + '</span></span>';
+      }
+
+      // Reading tip based on analysis signals
+      var tipText = "";
+      if (highCount >= 3) tipText = "Several claims need scrutiny \u2014 cross-reference before sharing.";
+      else if (intentType === "manipulation") tipText = "This article uses manipulative framing \u2014 read critically.";
+      else if (intentType === "persuasion") tipText = "This article aims to persuade \u2014 note which evidence is omitted.";
+      else if (verifiedCount >= total * 0.5) tipText = "Most claims are well-sourced \u2014 a relatively reliable piece.";
+      else if (highCount === 0) tipText = "No major red flags found \u2014 standard reporting.";
+
+      row5Html =
+        '<div style="margin-top:8px;padding-top:8px;border-top:1px solid ' + BORDER + ';">' +
+          // Claim breakdown bar
+          '<div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;">' +
+            '<span style="font-size:9px;color:' + TEXT_FAINT + ';white-space:nowrap;">Claims</span>' +
+            '<div style="flex:1;height:6px;border-radius:3px;overflow:hidden;display:flex;background:rgba(0,0,0,.04);">' +
+              barSegments +
+            '</div>' +
+          '</div>' +
+          // Legend
+          '<div style="display:flex;flex-wrap:wrap;gap:8px;font-size:9px;color:' + TEXT_MUTED + ';margin-bottom:' + (tipText ? '6px' : '0') + ';">' +
+            legendParts +
+          '</div>' +
+          // Reading tip
+          (tipText ?
+            '<div style="font-size:10px;color:' + TEXT_BODY + ';padding:5px 8px;border-radius:4px;' +
+              'background:rgba(0,0,0,.02);border-left:2px solid ' + (highCount >= 3 || intentType === "manipulation" ? "#F87171" : intentType === "persuasion" ? "#FBBF24" : "#4ADE80") + ';">' +
+              '\uD83D\uDCA1 ' + tipText +
+            '</div>' : '') +
+        '</div>';
+    }
+
+    banner.innerHTML = row1Html + row2Html + row3Html + row4Html + row5Html;
 
     var articleEl = document.querySelector("article, [role='main'], main, .article-body, .story-body");
     if (articleEl) {

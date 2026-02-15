@@ -138,7 +138,29 @@
 
     vQuality = Math.max(0, Math.min(100, Math.round(vQuality)));
 
-    if (vHasData) {
+    if (!isDeep) {
+      // Loading state: scanning animation while deep analysis runs
+      html +=
+        '<style>' +
+          '@keyframes spectrum-scan{0%{left:0%}50%{left:calc(100% - 18px)}100%{left:0%}}' +
+          '@keyframes spectrum-pulse{0%,100%{opacity:.4}50%{opacity:1}}' +
+        '</style>' +
+        '<div style="margin-bottom:20px;padding:20px 24px;border-radius:10px;background:var(--surface2);border-top:3px solid var(--text-faint);">' +
+          '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">' +
+            '<div style="font-size:20px;font-weight:700;color:var(--text-faint);animation:spectrum-pulse 2s ease infinite;">Evaluating\u2026</div>' +
+            '<div style="font-size:11px;color:var(--text-faint);">Deep analysis in progress</div>' +
+          '</div>' +
+          '<div style="position:relative;height:10px;border-radius:5px;margin-bottom:10px;' +
+            'background:linear-gradient(to right,#60A5FA,#94A3B8 50%,#F87171);">' +
+            '<div style="position:absolute;bottom:-4px;left:0;width:18px;height:18px;' +
+              'border-radius:50%;background:white;border:2.5px solid var(--text-faint);' +
+              'box-shadow:0 1px 6px rgba(0,0,0,.3);animation:spectrum-scan 3s ease-in-out infinite;"></div>' +
+          '</div>' +
+          '<div style="display:flex;justify-content:space-between;font-size:9px;color:var(--text-faint);">' +
+            '<span>\uD83D\uDD35 Poor</span><span>Mixed</span><span>Solid \uD83D\uDD34</span>' +
+          '</div>' +
+        '</div>';
+    } else if (vHasData) {
       var vLabel, vColor;
       if (vQuality >= 80) { vLabel = "Solid Journalism"; vColor = "#4ADE80"; }
       else if (vQuality >= 60) { vLabel = "Generally Fair"; vColor = "#60A5FA"; }
