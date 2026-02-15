@@ -88,6 +88,82 @@
         '</div>' +
       '</div>';
 
+    // ---- VERDICT ----
+    var vIntent = (a.intentClassification || {}).type || a.intentType || "";
+    var vQuality = 100;
+    var vHasData = false;
+    var vFlags = [];
+    var vStrengths = [];
+
+    if (typeof a.spinScore === "number") {
+      vHasData = true;
+      vQuality -= a.spinScore * 0.25;
+      if (a.spinScore > 60) vFlags.push("High spin");
+      else if (a.spinScore <= 20) vStrengths.push("Low spin");
+    }
+
+    if (vIntent) {
+      vHasData = true;
+      var vIntentPen = { informative: 0, advocacy: 5, persuasion: 20, manipulation: 35 };
+      vQuality -= vIntentPen[vIntent] || 0;
+      if (vIntent === "manipulation") vFlags.push("Manipulative");
+      else if (vIntent === "persuasion") vFlags.push("Persuasive framing");
+      else if (vIntent === "informative") vStrengths.push("Informative");
+    }
+
+    if (typeof a.polarizationIntensity === "number") {
+      vQuality -= a.polarizationIntensity * 0.15;
+      if (a.polarizationIntensity > 60) vFlags.push("Polarizing");
+      else if (a.polarizationIntensity <= 20) vStrengths.push("Non-polarizing");
+    }
+
+    var vPd = a.perspectiveDiversity;
+    if (vPd && typeof vPd.score === "number") {
+      vQuality -= (100 - vPd.score) * 0.1;
+      if (vPd.score < 30) vFlags.push("Narrow perspective");
+      else if (vPd.score >= 70) vStrengths.push("Diverse sources");
+    }
+
+    var vOm = a.omissionAnalysis;
+    if (vOm && typeof vOm.score === "number") {
+      vQuality -= vOm.score * 0.1;
+      if (vOm.score > 60) vFlags.push("Notable omissions");
+    }
+
+    // Lean pills (context only, not scored — lean isn't inherently bad journalism)
+    if (typeof a.leanScore === "number") {
+      if (Math.abs(a.leanScore) > 0.6) vFlags.push("Strong lean");
+      else if (Math.abs(a.leanScore) < 0.15) vStrengths.push("Balanced framing");
+    }
+
+    vQuality = Math.max(0, Math.min(100, Math.round(vQuality)));
+
+    if (vHasData) {
+      var vLabel, vColor;
+      if (vQuality >= 80) { vLabel = "Solid Journalism"; vColor = "#4ADE80"; }
+      else if (vQuality >= 60) { vLabel = "Generally Fair"; vColor = "#60A5FA"; }
+      else if (vQuality >= 40) { vLabel = "Mixed Practice"; vColor = "#FBBF24"; }
+      else if (vQuality >= 20) { vLabel = "Questionable Practice"; vColor = "#F87171"; }
+      else { vLabel = "Poor Journalism"; vColor = "#F87171"; }
+
+      var vPills = '';
+      for (var vi = 0; vi < vStrengths.length; vi++) {
+        vPills += '<span style="display:inline-block;padding:3px 10px;border-radius:10px;font-size:11px;font-weight:600;background:rgba(96,165,250,.12);color:#60A5FA;">' + esc(vStrengths[vi]) + '</span>';
+      }
+      for (var vj = 0; vj < vFlags.length; vj++) {
+        vPills += '<span style="display:inline-block;padding:3px 10px;border-radius:10px;font-size:11px;font-weight:600;background:rgba(248,113,113,.12);color:#F87171;">' + esc(vFlags[vj]) + '</span>';
+      }
+
+      html +=
+        '<div style="margin-bottom:20px;padding:20px 24px;border-radius:10px;background:var(--surface2);border-top:3px solid ' + vColor + ';">' +
+          '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:' + (vPills ? '12px' : '0') + ';">' +
+            '<div style="font-size:20px;font-weight:700;color:' + vColor + ';">' + vLabel + '</div>' +
+            '<div style="font-size:28px;font-weight:800;color:' + vColor + ';opacity:.6;">' + vQuality + '</div>' +
+          '</div>' +
+          (vPills ? '<div style="display:flex;flex-wrap:wrap;gap:6px;">' + vPills + '</div>' : '') +
+        '</div>';
+    }
+
     // ---- OVERVIEW ----
     html += '<div class="section" id="sec-overview">';
     html += '<div class="section-label">Overview</div>';
@@ -104,20 +180,6 @@
           '<div style="text-align:center;margin-top:8px;font-size:13px;font-weight:600;color:var(--accent);">' +
             (a.leanScore > 0 ? "+" : "") + a.leanScore.toFixed(2) +
           '</div>' +
-        '</div>';
-    }
-
-    // Source deviation callout (after lean bar)
-    if (typeof a.sourceDeviation === "number" && Math.abs(a.sourceDeviation) > 0.2) {
-      var devAbs = Math.abs(a.sourceDeviation);
-      var devColor = devAbs > 0.5 ? "var(--red)" : "var(--yellow)";
-      html +=
-        '<div style="margin-bottom:16px;padding:10px 14px;border-radius:8px;border-left:3px solid ' + devColor + ';background:var(--surface2);">' +
-          '<div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;">' +
-            '<span style="font-size:12px;font-weight:600;color:' + devColor + ';">Source Deviation</span>' +
-            '<span class="badge" style="background:' + devColor + '15;color:' + devColor + ';">' + (a.sourceDeviation > 0 ? "+" : "") + a.sourceDeviation.toFixed(2) + '</span>' +
-          '</div>' +
-          (a.sourceDeviationExplanation ? '<div style="font-size:12px;color:var(--text-muted);line-height:1.5;">' + esc(a.sourceDeviationExplanation) + '</div>' : '') +
         '</div>';
     }
 
@@ -322,48 +384,6 @@
           }
         }
 
-        html += '</div>';
-      }
-
-      // Temporal context section (deep only)
-      var tc = a.temporalContext;
-      if (tc && tc.narrativeShift) {
-        html += '<div class="section" id="sec-temporal">';
-        html += '<div class="section-label">Temporal Context</div>';
-        html += '<div style="font-size:13px;color:var(--text-muted);line-height:1.5;margin-bottom:10px;">' + esc(tc.narrativeShift) + '</div>';
-        if (typeof tc.consistencyScore === "number") {
-          var csScore = tc.consistencyScore;
-          var csColor = csScore >= 75 ? "var(--green)" : csScore >= 50 ? "var(--blue)" : csScore >= 25 ? "var(--yellow)" : "var(--red)";
-          html +=
-            '<div style="margin-bottom:10px;">' +
-              '<div style="display:flex;align-items:center;gap:10px;margin-bottom:6px;">' +
-                '<span style="font-size:12px;color:var(--text-faint);">Consistency</span>' +
-                '<span style="font-size:13px;font-weight:600;color:' + csColor + ';">' + csScore + '/100</span>' +
-              '</div>' +
-              '<div class="pol-track"><div class="pol-fill" style="width:' + csScore + '%;background:' + csColor + ';"></div></div>' +
-            '</div>';
-        }
-        if (tc.trendExplanation) {
-          html += '<div style="font-size:12px;color:var(--text-faint);font-style:italic;line-height:1.5;">' + esc(tc.trendExplanation) + '</div>';
-        }
-        html += '</div>';
-      }
-
-      // Author consistency section (deep only)
-      var ac = a.authorConsistency;
-      if (ac && ac.authorName) {
-        html += '<div class="section" id="sec-author">';
-        html += '<div class="section-label">Author Consistency</div>';
-        var acDevColor = (typeof ac.deviation === "number" && ac.deviation > 0.15) ? "var(--yellow)" : "var(--text-faint)";
-        html +=
-          '<div style="padding:10px 14px;border-radius:8px;border-left:3px solid #8B5CF6;background:var(--surface2);">' +
-            '<div style="font-weight:600;color:var(--text);margin-bottom:6px;">' + esc(ac.authorName) + '</div>' +
-            '<div style="display:flex;gap:16px;flex-wrap:wrap;margin-bottom:6px;">' +
-              (typeof ac.typicalLean === "number" ? '<div style="font-size:12px;color:var(--text-muted);">Typical lean: <strong>' + (ac.typicalLean > 0 ? "+" : "") + ac.typicalLean.toFixed(2) + '</strong></div>' : '') +
-              (typeof ac.deviation === "number" ? '<div style="font-size:12px;color:' + acDevColor + ';">Deviation: <strong>' + ac.deviation.toFixed(2) + '</strong></div>' : '') +
-            '</div>' +
-            (ac.note ? '<div style="font-size:12px;color:var(--text-muted);line-height:1.5;">' + esc(ac.note) + '</div>' : '') +
-          '</div>';
         html += '</div>';
       }
 
