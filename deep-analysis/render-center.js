@@ -146,21 +146,21 @@
       else if (vQuality >= 20) { vLabel = "Questionable Practice"; vColor = "#F87171"; }
       else { vLabel = "Poor Journalism"; vColor = "#F87171"; }
 
-      // Build pills positioned on the spectrum
-      var vRedOnBar = '';
-      for (var vj = 0; vj < vFlags.length; vj++) {
-        var rp = 5 + (vj * 30 / Math.max(vFlags.length, 1));
-        vRedOnBar += '<span style="position:absolute;bottom:calc(100% + 5px);left:' + rp + '%;transform:translateX(-50%);' +
-          'padding:2px 8px;border-radius:10px;font-size:10px;font-weight:600;white-space:nowrap;' +
-          'background:rgba(248,113,113,.15);color:#F87171;border:1px solid rgba(248,113,113,.2);">' +
-          esc(vFlags[vj]) + '</span>';
-      }
+      // Blue pills (flags/ignorance) on the left, Red pills (strengths/truth) on the right
       var vBlueOnBar = '';
-      for (var vi = 0; vi < vStrengths.length; vi++) {
-        var bp = 100 - 5 - (vi * 30 / Math.max(vStrengths.length, 1));
+      for (var vj = 0; vj < vFlags.length; vj++) {
+        var bp = 5 + (vj * 30 / Math.max(vFlags.length, 1));
         vBlueOnBar += '<span style="position:absolute;bottom:calc(100% + 5px);left:' + bp + '%;transform:translateX(-50%);' +
           'padding:2px 8px;border-radius:10px;font-size:10px;font-weight:600;white-space:nowrap;' +
           'background:rgba(96,165,250,.15);color:#60A5FA;border:1px solid rgba(96,165,250,.2);">' +
+          esc(vFlags[vj]) + '</span>';
+      }
+      var vRedOnBar = '';
+      for (var vi = 0; vi < vStrengths.length; vi++) {
+        var rp = 100 - 5 - (vi * 30 / Math.max(vStrengths.length, 1));
+        vRedOnBar += '<span style="position:absolute;bottom:calc(100% + 5px);left:' + rp + '%;transform:translateX(-50%);' +
+          'padding:2px 8px;border-radius:10px;font-size:10px;font-weight:600;white-space:nowrap;' +
+          'background:rgba(248,113,113,.15);color:#F87171;border:1px solid rgba(248,113,113,.2);">' +
           esc(vStrengths[vi]) + '</span>';
       }
 
@@ -173,11 +173,11 @@
             '<div style="font-size:20px;font-weight:700;color:' + vColor + ';">' + vLabel + '</div>' +
             '<div style="font-size:28px;font-weight:800;color:' + vColor + ';opacity:.6;">' + vQuality + '</div>' +
           '</div>' +
-          // Spectrum bar with pills above
+          // Spectrum bar with pills above: blue (bad) → red (good)
           '<div style="position:relative;margin-top:' + vPillTopPad + 'px;margin-bottom:10px;">' +
-            vRedOnBar + vBlueOnBar +
+            vBlueOnBar + vRedOnBar +
             '<div style="height:10px;border-radius:5px;' +
-              'background:linear-gradient(to right,#F87171,#FBBF24 35%,#94A3B8 50%,#60A5FA 65%,#4ADE80);">' +
+              'background:linear-gradient(to right,#60A5FA,#94A3B8 50%,#F87171);">' +
             '</div>' +
             '<div style="position:absolute;bottom:-4px;left:calc(' + vQuality + '% - 9px);width:18px;height:18px;' +
               'border-radius:50%;background:' + vColor + ';border:2.5px solid white;' +
@@ -185,7 +185,7 @@
           '</div>' +
           // Scale labels
           '<div style="display:flex;justify-content:space-between;font-size:9px;color:var(--text-faint);">' +
-            '<span>Poor</span><span>Questionable</span><span>Mixed</span><span>Fair</span><span>Solid</span>' +
+            '<span>\uD83D\uDD35 Poor</span><span>Mixed</span><span>Solid \uD83D\uDD34</span>' +
           '</div>' +
         '</div>';
     }
