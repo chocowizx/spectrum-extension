@@ -1189,6 +1189,10 @@
           '<div style="display:flex;align-items:center;gap:5px;flex-wrap:wrap;">' +
             bluePillsHtml + redPillsHtml +
           '</div>' +
+          // Fast analysis disclaimer
+          '<div style="margin-top:6px;font-size:9px;color:' + TEXT_FAINT + ';font-style:italic;">' +
+            'At a glance \u2014 evaluation may change with a full deep analysis.' +
+          '</div>' +
         '</div>';
 
       row4Html = spectrumHtml;
