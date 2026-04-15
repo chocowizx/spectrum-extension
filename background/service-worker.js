@@ -645,7 +645,7 @@ chrome.runtime.onMessage.addListener(function (message, sender, sendResponse) {
     case "ARTICLE_DATA": {
       // Debounce: skip if already analyzing this tab
       if (tabState[tabId] && (tabState[tabId].status === "analyzing" || tabState[tabId].status === "analyzing_chunks")) {
-        console.log("[Spectrum:DEBUG] Skipping duplicate ARTICLE_DATA for tab", tabId);
+        // duplicate ARTICLE_DATA — skip
         sendResponse({ received: true });
         break;
       }
@@ -1018,9 +1018,7 @@ async function handleArticleAnalysis(tabId, articleData) {
   if (!tabId || !tabState[tabId]) return;
   if (tabState[tabId]) tabState[tabId].status = "analyzing";
 
-  console.log("[Spectrum:DEBUG] handleArticleAnalysis called — isYouTube:", !!articleData.isYouTube,
-    "hasTranscript:", !!articleData.transcript,
-    "segCount:", articleData.transcript && articleData.transcript.segments ? articleData.transcript.segments.length : 0);
+  // handleArticleAnalysis entry point
 
   // For YouTube: if transcript missing, recover via MAIN world script injection.
   // Service worker fetches to YouTube APIs return 403 (extension origin blocked).
@@ -1170,7 +1168,6 @@ async function handleArticleAnalysis(tabId, articleData) {
     var segs = articleData.transcript.segments;
     var lastSeg = segs[segs.length - 1];
     var totalDuration = lastSeg.start + (lastSeg.dur || 0);
-    console.log("[Spectrum:DEBUG] Chunk mode check — duration:", totalDuration, "s, segments:", segs.length);
     if (totalDuration > 120) {
       // Hand off to content script's ChunkScheduler
       var ytChannel = getYouTubeNewsChannel({
@@ -1182,16 +1179,11 @@ async function handleArticleAnalysis(tabId, articleData) {
         articleData: articleData,
         sourceLean: ytChannel ? ytChannel.lean : "",
         sourceName: ytChannel ? ytChannel.name : (articleData.author || ""),
-      }).catch(function (e) { console.warn("[Spectrum:DEBUG] START_CHUNK_SCHEDULER send failed:", e.message); });
+      }).catch(function () {});
       if (tabState[tabId]) tabState[tabId].status = "analyzing_chunks";
       setBadge(tabId, "\u25B6", "#8B5CF6");
-      console.log("[Spectrum:DEBUG] >>> CHUNK MODE ACTIVATED — sent START_CHUNK_SCHEDULER");
       return;
-    } else {
-      console.log("[Spectrum:DEBUG] Duration too short for chunks:", totalDuration, "s — using monolithic");
     }
-  } else if (articleData.isYouTube) {
-    console.log("[Spectrum:DEBUG] Chunk mode SKIPPED — transcript still missing after recovery");
   }
 
   if (tabState[tabId]) tabState[tabId].status = "analyzing";
@@ -1374,7 +1366,7 @@ chrome.runtime.onInstalled.addListener(function () {
     if (!result.spectrumInstallId) {
       var id = crypto.randomUUID();
       chrome.storage.local.set({ spectrumInstallId: id });
-      console.log("[Spectrum] Generated install ID:", id);
+      // install ID generated
     }
   });
 });
@@ -1422,4 +1414,4 @@ chrome.notifications.onClicked.addListener(function (notificationId) {
   }
 });
 
-console.log("[Spectrum] Service worker initialized");
+// Service worker initialized

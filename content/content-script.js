@@ -182,7 +182,7 @@
         sendResponse({ ok: true });
         break;
       case "ANALYSIS_RESULT":
-        console.log("[Spectrum:DEBUG] >>> ANALYSIS_RESULT received", message.analysis?.isFrontPage ? "(FRONT PAGE)" : "(article)");
+
         removeHighlights();
         __lastAnalysis = message.analysis;
         if (message.analysis && message.analysis.detectedLanguage) {
@@ -214,7 +214,6 @@
         sendResponse({ ok: true });
         break;
       case "START_CHUNK_SCHEDULER":
-        console.log("[Spectrum:DEBUG] >>> START_CHUNK_SCHEDULER received!");
         removeHighlights();
         __lastArticleData = message.articleData;
         if (message.articleData && message.articleData.detectedLanguage) {
@@ -263,7 +262,6 @@
       var frontPageData = ArticleExtractor.extractFrontPage();
       if (frontPageData.headlineCount >= 3) {
         showFloatingBadge(L("status_frontPageAnalyzing"), "#8B5CF6", detection);
-        console.log("[Spectrum:DEBUG] Sending FRONT_PAGE_DATA —", frontPageData.headlineCount, "headlines from", frontPageData.domain);
         chrome.runtime.sendMessage({ type: "FRONT_PAGE_DATA", data: frontPageData }).catch(function () {});
         return;
       }
@@ -293,10 +291,6 @@
     }
     __lastArticleData = articleData;
     __videoSegments = (isYouTube && articleData.transcript && articleData.transcript.segments) ? articleData.transcript.segments : null;
-    console.log("[Spectrum:DEBUG] Sending ARTICLE_DATA — isYouTube:", !!articleData.isYouTube,
-      "hasTranscript:", !!articleData.transcript,
-      "segCount:", __videoSegments ? __videoSegments.length : 0,
-      "wordCount:", articleData.wordCount);
     chrome.runtime.sendMessage({ type: "ARTICLE_DATA", data: articleData }).catch(function () {});
   }
 
@@ -3386,8 +3380,23 @@
 
   // ---- Chunk UI helpers (HUD overlay mode) ----
 
-  function _showChunkAnalyzingIndicator() {}
-  function _hideChunkAnalyzingIndicator() {}
+  function _showChunkAnalyzingIndicator(chunk) {
+    var hud = document.getElementById("spectrum-video-hud");
+    if (!hud) return;
+    var existing = hud.querySelector(".shud-analyzing");
+    if (existing) return; // already showing
+    var countEl = hud.querySelector("#spectrum-hud-count");
+    if (!countEl) return;
+    var el = document.createElement("span");
+    el.className = "shud-analyzing";
+    el.style.cssText = "font-size:11px;color:rgba(129,140,248,0.7);margin-left:8px;animation:spectrum-hud-pulse 1.5s ease infinite;";
+    el.textContent = "Analyzing\u2026";
+    countEl.parentNode.insertBefore(el, countEl.nextSibling);
+  }
+  function _hideChunkAnalyzingIndicator() {
+    var el = document.querySelector(".shud-analyzing");
+    if (el) el.remove();
+  }
 
   function _updateSidebarHeaderFromBoot(bootAnalysis) {
     var leanEl = document.getElementById("spectrum-hud-lean");
