@@ -1872,6 +1872,16 @@
             '</span>' +
           '</div>' +
           '<div style="font-size:11px;color:' + sentColor + ';margin-top:3px;">' + sentLabel + '</div>' +
+          (function() {
+            var dev = analysis._sentimentDeviation;
+            if (!dev || dev.category === "typical") return "";
+            var devColors = { extreme: "#EF4444", notable: "#F59E0B", mild: "#60A5FA" };
+            var devLabels = { extreme: "Extreme deviation from outlet norm", notable: "Notable deviation from outlet norm", mild: "Mild deviation" };
+            var dc = devColors[dev.category] || "#94A3B8";
+            return '<div style="margin-top:5px;font-size:11px;color:' + dc + ';padding:3px 6px;border-radius:4px;background:' + dc + '12;border-left:2px solid ' + dc + ';">' +
+              devLabels[dev.category] + ' (' + (dev.deviation > 0 ? '+' : '') + dev.deviation.toFixed(2) + ' vs baseline ' + dev.baseline.baseline.toFixed(2) + ')' +
+            '</div>';
+          })() +
           (sentData && sentData.headlineBodyMismatch ?
             '<div style="margin-top:5px;font-size:11px;color:#FBBF24;padding:3px 6px;border-radius:4px;background:rgba(251,191,36,0.08);border-left:2px solid #FBBF24;">' +
               'Headline-body mismatch' + (sentData.mismatchSeverity && sentData.mismatchSeverity !== "none" ? ' (' + sentData.mismatchSeverity + ')' : '') +
@@ -3670,6 +3680,16 @@
             '</span>' +
           '</div>' +
           '<div style="font-size:11px;color:' + sentColor + ';margin-top:3px;">' + sentLabel + '</div>' +
+          (function() {
+            var dev = analysis._sentimentDeviation;
+            if (!dev || dev.category === "typical") return "";
+            var devColors = { extreme: "#EF4444", notable: "#F59E0B", mild: "#60A5FA" };
+            var devLabels = { extreme: "Extreme deviation from outlet norm", notable: "Notable deviation from outlet norm", mild: "Mild deviation" };
+            var dc = devColors[dev.category] || "#94A3B8";
+            return '<div style="margin-top:5px;font-size:11px;color:' + dc + ';padding:3px 6px;border-radius:4px;background:' + dc + '12;border-left:2px solid ' + dc + ';">' +
+              devLabels[dev.category] + ' (' + (dev.deviation > 0 ? '+' : '') + dev.deviation.toFixed(2) + ' vs baseline ' + dev.baseline.baseline.toFixed(2) + ')' +
+            '</div>';
+          })() +
           (sentData && sentData.headlineBodyMismatch ?
             '<div style="margin-top:5px;font-size:11px;color:#FBBF24;padding:3px 6px;border-radius:4px;background:rgba(251,191,36,0.08);border-left:2px solid #FBBF24;">' +
               'Headline-body mismatch' + (sentData.mismatchSeverity && sentData.mismatchSeverity !== "none" ? ' (' + sentData.mismatchSeverity + ')' : '') +

@@ -5,6 +5,8 @@
 importScripts("../shared/credibility.js");
 // Load state-affiliated media database (Upgrade #9)
 importScripts("../shared/stateMedia.js");
+// Load sentiment baselines for outlet deviation scoring
+importScripts("../shared/sentimentBaselines.js");
 
 // ============================================================
 // DOMAIN LISTS (inlined from domain-lists.js)
@@ -1278,6 +1280,15 @@ async function handleArticleAnalysis(tabId, articleData) {
     // Attach state media affiliation data (Upgrade #9)
     if (_stateMediaData) {
       analysis._stateAffiliation = _stateMediaData;
+    }
+
+    // Attach sentiment deviation from outlet baseline
+    var _sentScore = analysis.sentimentAnalysis ? analysis.sentimentAnalysis.overallScore : (typeof analysis.sentimentScore === "number" ? analysis.sentimentScore : null);
+    if (_sentScore !== null && typeof getSentimentDeviation === "function") {
+      var _sentDev = getSentimentDeviation(_credDomain, _sentScore);
+      if (_sentDev) {
+        analysis._sentimentDeviation = _sentDev;
+      }
     }
 
     await cacheAnalysis(articleData.url, analysis);
