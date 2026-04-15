@@ -3,6 +3,7 @@
 
   function renderSidePanels(a, isDeep) {
     var esc = DA.esc;
+    var _L = typeof L === "function" ? L : function (k) { return k; };
     var leftPanel = document.getElementById("side-left");
     var rightPanel = document.getElementById("side-right");
 
@@ -29,10 +30,10 @@
 
     if (allDataPoints.length > 0) {
       leftHtml += '<div class="side-card">';
-      leftHtml += '<div class="side-card-label">Key Data Points</div>';
+      leftHtml += '<div class="side-card-label">' + _L("side_keyData") + '</div>';
       for (var dp = 0; dp < allDataPoints.length; dp++) {
         leftHtml += '<div class="side-source">' +
-          '<span class="side-evidence-tag" style="background:rgba(96,165,250,.1);color:#60A5FA;">DATA</span>' +
+          '<span class="side-evidence-tag" style="background:rgba(96,165,250,.1);color:#60A5FA;">' + _L("tag_data") + '</span>' +
           esc(allDataPoints[dp].text) + '</div>';
       }
       leftHtml += '</div>';
@@ -40,10 +41,10 @@
 
     if (allGaps.length > 0) {
       leftHtml += '<div class="side-card">';
-      leftHtml += '<div class="side-card-label">Information Gaps</div>';
+      leftHtml += '<div class="side-card-label">' + _L("side_informationGaps") + '</div>';
       for (var gp = 0; gp < allGaps.length; gp++) {
         leftHtml += '<div class="side-source">' +
-          '<span class="side-evidence-tag" style="background:rgba(251,191,36,.1);color:#FBBF24;">GAP</span>' +
+          '<span class="side-evidence-tag" style="background:rgba(251,191,36,.1);color:#FBBF24;">' + _L("tag_gap") + '</span>' +
           esc(allGaps[gp]) + '</div>';
       }
       leftHtml += '</div>';
@@ -53,11 +54,11 @@
     var indicators = a.biasIndicators || [];
     if (indicators.length > 0) {
       leftHtml += '<div class="side-card">';
-      leftHtml += '<div class="side-card-label">Bias Patterns Found</div>';
+      leftHtml += '<div class="side-card-label">' + _L("side_biasPatterns") + '</div>';
       for (var bp = 0; bp < indicators.length; bp++) {
         var pat = indicators[bp];
         leftHtml += '<div class="side-source">' +
-          '<span class="side-evidence-tag" style="background:rgba(248,113,113,.1);color:#F87171;">BIAS</span>' +
+          '<span class="side-evidence-tag" style="background:rgba(248,113,113,.1);color:#F87171;">' + _L("tag_bias") + '</span>' +
           '<strong>' + esc((pat.pattern || "").replace(/_/g, " ")) + '</strong>' +
           '</div>';
       }
@@ -68,10 +69,10 @@
     var om = a.omissionAnalysis;
     if (om && typeof om.score === "number") {
       leftHtml += '<div class="side-card">';
-      leftHtml += '<div class="side-card-label">Omission Summary</div>';
+      leftHtml += '<div class="side-card-label">' + _L("side_omissionSummary") + '</div>';
       var omColor = om.score > 70 ? "#F87171" : om.score > 45 ? "#FBBF24" : om.score > 20 ? "#60A5FA" : "#4ADE80";
       leftHtml += '<div class="side-source" style="display:flex;justify-content:space-between;align-items:center;">' +
-        '<span>Omission Score</span><strong style="color:' + omColor + ';">' + om.score + '/100</strong></div>';
+        '<span>' + _L("metric_omissionScore") + '</span><strong style="color:' + omColor + ';">' + om.score + '/100</strong></div>';
       var omTotal = (om.missingStakeholders || []).length + (om.missingContext || []).length + (om.missingCounterEvidence || []).length;
       if (omTotal > 0) {
         leftHtml += '<div class="side-source">' + omTotal + ' omission' + (omTotal > 1 ? 's' : '') + ' identified</div>';
@@ -89,7 +90,7 @@
     }
     if (allEvidence.length > 0) {
       leftHtml += '<div class="side-card">';
-      leftHtml += '<div class="side-card-label">Evidence Strength</div>';
+      leftHtml += '<div class="side-card-label">' + _L("side_evidenceStrength") + '</div>';
       var strengthColors = { strong: "#4ADE80", moderate: "#FBBF24", weak: "#F87171" };
       var typeIcons = { supporting: "\u2713", contradicting: "\u2717", contextual: "\u2139" };
       for (var evi2 = 0; evi2 < Math.min(allEvidence.length, 8); evi2++) {
@@ -110,12 +111,9 @@
 
     // Methodology card
     leftHtml += '<div class="side-card" style="border-color:rgba(129,140,248,.15);">';
-    leftHtml += '<div class="side-card-label">Methodology</div>';
+    leftHtml += '<div class="side-card-label">' + _L("side_methodology") + '</div>';
     leftHtml += '<div style="font-size:11px;color:var(--text-faint);line-height:1.6;">' +
-      'Analysis grounded in established media studies frameworks: ' +
-      'Herman & Chomsky\u2019s propaganda model, ' +
-      'Entman\u2019s framing theory, ' +
-      'and AllSides/Ad Fontes media bias classifications.' +
+      _L("methodology_desc") +
       '</div>';
     leftHtml += '</div>';
 
@@ -126,20 +124,20 @@
 
     // Source credibility card
     rightHtml += '<div class="side-card">';
-    rightHtml += '<div class="side-card-label">Source Profile</div>';
+    rightHtml += '<div class="side-card-label">' + _L("side_sourceProfile") + '</div>';
     rightHtml += '<div class="side-source"><strong>' + esc(a.sourceBias ? a.sourceBias.split(" is ")[0] || "Source" : "Source") + '</strong></div>';
     if (a.overallLean) {
       var leanColors = { "left": "#7CB3E0", "center-left": "#93B5D0", "center": "#94A3B8", "center-right": "#C4918F", "right": "#D98282" };
       var lc = leanColors[a.overallLean.toLowerCase()] || "var(--text-faint)";
       rightHtml += '<div class="side-source">' +
         '<span class="side-evidence-tag" style="background:' + lc + '18;color:' + lc + ';">' + esc(a.overallLean) + '</span>' +
-        'Editorial lean</div>';
+        _L("meta_editorialLean") + '</div>';
     }
     if (typeof a.leanScore === "number") {
-      rightHtml += '<div class="side-source">Lean score: <strong>' + (a.leanScore > 0 ? "+" : "") + a.leanScore.toFixed(2) + '</strong></div>';
+      rightHtml += '<div class="side-source">' + _L("meta_leanScore") + '<strong>' + (a.leanScore > 0 ? "+" : "") + a.leanScore.toFixed(2) + '</strong></div>';
     }
     if (typeof a.confidence === "number") {
-      rightHtml += '<div class="side-source">Confidence: <strong>' + Math.round(a.confidence * 100) + '%</strong></div>';
+      rightHtml += '<div class="side-source">' + _L("meta_confidence") + '<strong>' + Math.round(a.confidence * 100) + '%</strong></div>';
     }
     rightHtml += '</div>';
 
@@ -158,7 +156,7 @@
 
     if (claimSources.length > 0) {
       rightHtml += '<div class="side-card">';
-      rightHtml += '<div class="side-card-label">Referenced Sources</div>';
+      rightHtml += '<div class="side-card-label">' + _L("side_referencedSources") + '</div>';
       for (var rs = 0; rs < claimSources.length; rs++) {
         rightHtml += '<div class="side-source">' +
           '<strong>' + esc(claimSources[rs].name) + '</strong>' +
@@ -177,7 +175,7 @@
     var typeKeys = Object.keys(typeCount);
     if (typeKeys.length > 0) {
       rightHtml += '<div class="side-card">';
-      rightHtml += '<div class="side-card-label">Claims Breakdown</div>';
+      rightHtml += '<div class="side-card-label">' + _L("side_claimsBreakdown") + '</div>';
       var typeColorMap = { verified: "#4ADE80", neutral: "#94A3B8", contentious: "#FBBF24", misleading: "#F87171", unsupported: "#F87171", opinion_as_fact: "#FBBF24", omission: "#60A5FA" };
       for (var tk = 0; tk < typeKeys.length; tk++) {
         var key = typeKeys[tk];
@@ -200,24 +198,24 @@
       var missingCount = (pd.missingPerspectives || []).length;
       var pdColor = pd.score >= 75 ? "#4ADE80" : pd.score >= 50 ? "#60A5FA" : pd.score >= 25 ? "#FBBF24" : "#F87171";
       rightHtml += '<div class="side-card">';
-      rightHtml += '<div class="side-card-label">Perspective Balance</div>';
+      rightHtml += '<div class="side-card-label">' + _L("side_perspectiveBalance") + '</div>';
       rightHtml += '<div class="side-source" style="display:flex;justify-content:space-between;align-items:center;">' +
-        '<span>Diversity Score</span><strong style="color:' + pdColor + ';">' + pd.score + '/100</strong></div>';
+        '<span>' + _L("metric_diversityScore") + '</span><strong style="color:' + pdColor + ';">' + pd.score + '/100</strong></div>';
       rightHtml += '<div class="side-source" style="display:flex;justify-content:space-between;align-items:center;">' +
-        '<span style="color:#4ADE80;">Present</span><strong>' + presentCount + '</strong></div>';
+        '<span style="color:#4ADE80;">' + _L("persp_present") + '</span><strong>' + presentCount + '</strong></div>';
       rightHtml += '<div class="side-source" style="display:flex;justify-content:space-between;align-items:center;">' +
-        '<span style="color:#F87171;">Missing</span><strong>' + missingCount + '</strong></div>';
+        '<span style="color:#F87171;">' + _L("persp_missing") + '</span><strong>' + missingCount + '</strong></div>';
       rightHtml += '</div>';
     }
 
     // Analysis depth badge
     rightHtml += '<div class="side-card" style="text-align:center;border-color:rgba(129,140,248,.15);">';
     if (isDeep) {
-      rightHtml += '<span class="badge" style="background:linear-gradient(135deg,#6366F1,#8B5CF6);color:#fff;font-size:10px;letter-spacing:.5px;padding:5px 14px;">DEEP ANALYSIS</span>';
-      rightHtml += '<div style="font-size:10px;color:var(--text-faint);margin-top:8px;">Full comprehensive scan complete</div>';
+      rightHtml += '<span class="badge" style="background:linear-gradient(135deg,#6366F1,#8B5CF6);color:#fff;font-size:10px;letter-spacing:.5px;padding:5px 14px;">' + _L("badge_deep") + '</span>';
+      rightHtml += '<div style="font-size:10px;color:var(--text-faint);margin-top:8px;">' + _L("depth_deepDesc") + '</div>';
     } else {
-      rightHtml += '<span class="badge" style="background:rgba(255,255,255,.06);color:var(--text-faint);font-size:10px;">QUICK ANALYSIS</span>';
-      rightHtml += '<div style="font-size:10px;color:var(--text-faint);margin-top:8px;">Deep analysis loading below\u2026</div>';
+      rightHtml += '<span class="badge" style="background:rgba(255,255,255,.06);color:var(--text-faint);font-size:10px;">' + _L("badge_quick") + '</span>';
+      rightHtml += '<div style="font-size:10px;color:var(--text-faint);margin-top:8px;">' + _L("depth_quickDesc") + '</div>';
     }
     rightHtml += '</div>';
 

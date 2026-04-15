@@ -49,6 +49,11 @@
           articleTitle: data.articleTitle,
           sourceDomain: data.sourceDomain,
           images: data.images || [],
+          imageDataUrls: data.imageDataUrls || [],
+          author: data.author || null,
+          isYouTube: data.isYouTube || false,
+          transcript: data.transcript || null,
+          detectedLanguage: data.detectedLanguage || null,
           mode: "deep",
         }),
       });
@@ -99,14 +104,24 @@
     try {
       var data = result && result.data;
       if (!data || !data.articleText) {
-        showError("No article data received. Please try again from the article page.");
+        showError(typeof L === "function" ? L("error_noData") : "No article data received. Please try again from the article page.");
         return;
       }
 
+      // Set language for labels
+      if (data.detectedLanguage && typeof L === "function") {
+        __spectrumLang = data.detectedLanguage;
+      }
+
+      var _L = typeof L === "function" ? L : function (k) { return k; };
+
       // Phase 1: Render fast analysis immediately
       if (data.fastAnalysis) {
+        if (data.fastAnalysis.detectedLanguage && typeof L === "function") {
+          __spectrumLang = data.fastAnalysis.detectedLanguage;
+        }
         initFill.style.width = "40%";
-        initStatus.textContent = "Rendering quick analysis\u2026";
+        initStatus.textContent = _L("status_renderingQuick");
         setTimeout(function () {
           DA.hideInitLoader();
           DA.showPageLayout();
@@ -117,7 +132,7 @@
       } else {
         // No fast analysis — keep loader visible, go straight to deep
         initFill.style.width = "15%";
-        initStatus.textContent = "Running deep analysis\u2026";
+        initStatus.textContent = _L("status_runningDeep");
         runDeepAnalysis(data, false);
       }
     } catch (err) {

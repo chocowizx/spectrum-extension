@@ -73,6 +73,38 @@ const SpectrumStorage = {
     }
   },
 
+  // ============ Feedback ============
+  async saveFeedback(item) {
+    const result = await this.get(["spectrumFeedback"]);
+    const list = result.spectrumFeedback || [];
+    item.id = Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+    item.timestamp = Date.now();
+    list.unshift(item);
+    // Cap at 200 items
+    if (list.length > 200) list.length = 200;
+    await this.set({ spectrumFeedback: list });
+    return item;
+  },
+
+  async getFeedback() {
+    const result = await this.get(["spectrumFeedback"]);
+    return result.spectrumFeedback || [];
+  },
+
+  async deleteFeedback(id) {
+    const result = await this.get(["spectrumFeedback"]);
+    const list = (result.spectrumFeedback || []).filter((f) => f.id !== id);
+    await this.set({ spectrumFeedback: list });
+  },
+
+  async updateFeedback(id, updates) {
+    const result = await this.get(["spectrumFeedback"]);
+    const list = result.spectrumFeedback || [];
+    const idx = list.findIndex((f) => f.id === id);
+    if (idx !== -1) Object.assign(list[idx], updates);
+    await this.set({ spectrumFeedback: list });
+  },
+
   // Track rate limiting
   async canMakeApiCall() {
     const result = await this.get(["apiCallLog"]);

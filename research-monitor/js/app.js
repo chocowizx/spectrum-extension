@@ -55,7 +55,8 @@
                 (r === "papers" && page === "papers") ||
                 (r === "papers" && page === "paper") ||
                 (r === "digests" && (page === "digests" || page === "digest")) ||
-                (r === "upgrades" && page === "upgrades")
+                (r === "upgrades" && page === "upgrades") ||
+                (r === "feedback" && page === "feedback")
             );
         });
 
@@ -78,6 +79,9 @@
                 break;
             case "upgrades":
                 renderUpgrades(content);
+                break;
+            case "feedback":
+                renderFeedback(content);
                 break;
             default:
                 content.innerHTML = `<div class="empty-state"><p>Page not found</p><a href="#/" style="color:#a5b4fc">Go to Dashboard</a></div>`;
