@@ -13,7 +13,7 @@ const CREDIBILITY_DB = {
   "inthesetimes.com":     { score: 52, factCheck: 48, editorial: 58, transparency: 52, correction: 50 },
 
   // Left
-  "msnbc.com":            { score: 62, factCheck: 60, editorial: 68, transparency: 65, correction: 58 },
+  "msnbc.com":            { score: 58, factCheck: 56, editorial: 64, transparency: 60, correction: 54, pmiValidated: true },
   "huffpost.com":         { score: 58, factCheck: 55, editorial: 62, transparency: 60, correction: 56 },
   "vox.com":              { score: 72, factCheck: 74, editorial: 76, transparency: 70, correction: 70 },
   "theguardian.com":      { score: 82, factCheck: 85, editorial: 88, transparency: 80, correction: 78 },
@@ -31,7 +31,7 @@ const CREDIBILITY_DB = {
   // Center-Left
   "nytimes.com":          { score: 88, factCheck: 92, editorial: 92, transparency: 86, correction: 84 },
   "washingtonpost.com":   { score: 86, factCheck: 90, editorial: 90, transparency: 84, correction: 82 },
-  "cnn.com":              { score: 72, factCheck: 74, editorial: 76, transparency: 72, correction: 68 },
+  "cnn.com":              { score: 68, factCheck: 70, editorial: 72, transparency: 68, correction: 64, pmiValidated: true },
   "npr.org":              { score: 88, factCheck: 92, editorial: 90, transparency: 86, correction: 84 },
   "pbs.org":              { score: 88, factCheck: 90, editorial: 90, transparency: 87, correction: 85 },
   "bbc.com":              { score: 88, factCheck: 90, editorial: 92, transparency: 86, correction: 84 },
@@ -55,12 +55,12 @@ const CREDIBILITY_DB = {
   // Center
   "reuters.com":          { score: 94, factCheck: 96, editorial: 96, transparency: 92, correction: 92 },
   "apnews.com":           { score: 94, factCheck: 96, editorial: 96, transparency: 92, correction: 92 },
-  "thehill.com":          { score: 70, factCheck: 72, editorial: 74, transparency: 70, correction: 66 },
+  "thehill.com":          { score: 72, factCheck: 74, editorial: 76, transparency: 72, correction: 68, pmiValidated: true },
   "usatoday.com":         { score: 72, factCheck: 74, editorial: 76, transparency: 70, correction: 68 },
   "bloomberg.com":        { score: 84, factCheck: 86, editorial: 88, transparency: 82, correction: 80 },
   "c-span.org":           { score: 96, factCheck: 98, editorial: 98, transparency: 95, correction: 94 },
   "aljazeera.com":        { score: 72, factCheck: 74, editorial: 76, transparency: 72, correction: 68 },
-  "newsweek.com":         { score: 60, factCheck: 58, editorial: 64, transparency: 62, correction: 57 },
+  "newsweek.com":         { score: 56, factCheck: 54, editorial: 60, transparency: 58, correction: 53, pmiValidated: true },
   "marketwatch.com":      { score: 74, factCheck: 76, editorial: 78, transparency: 72, correction: 70 },
   "foreignpolicy.com":    { score: 82, factCheck: 84, editorial: 86, transparency: 80, correction: 78 },
   "france24.com":         { score: 80, factCheck: 82, editorial: 84, transparency: 78, correction: 76 },
@@ -80,7 +80,7 @@ const CREDIBILITY_DB = {
   "economist.com":        { score: 90, factCheck: 92, editorial: 94, transparency: 88, correction: 86 },
   "forbes.com":           { score: 66, factCheck: 64, editorial: 70, transparency: 66, correction: 64 },
   "nationalreview.com":   { score: 58, factCheck: 56, editorial: 65, transparency: 58, correction: 55 },
-  "realclearpolitics.com":{ score: 55, factCheck: 52, editorial: 60, transparency: 56, correction: 52 },
+  "realclearpolitics.com":{ score: 50, factCheck: 48, editorial: 55, transparency: 52, correction: 48, pmiValidated: true },
   "reason.com":           { score: 65, factCheck: 64, editorial: 70, transparency: 66, correction: 62 },
   "freebeacon.com":       { score: 48, factCheck: 44, editorial: 52, transparency: 50, correction: 46 },
   "spectator.org":        { score: 52, factCheck: 48, editorial: 58, transparency: 52, correction: 50 },
@@ -92,7 +92,7 @@ const CREDIBILITY_DB = {
   "theaustralian.com.au": { score: 68, factCheck: 68, editorial: 72, transparency: 66, correction: 65 },
 
   // Right
-  "foxnews.com":          { score: 42, factCheck: 36, editorial: 46, transparency: 44, correction: 42 },
+  "foxnews.com":          { score: 44, factCheck: 38, editorial: 48, transparency: 44, correction: 42, pmiValidated: true },
   "nypost.com":           { score: 44, factCheck: 38, editorial: 48, transparency: 46, correction: 44 },
   "washingtontimes.com":  { score: 46, factCheck: 42, editorial: 50, transparency: 48, correction: 44 },
   "thefederalist.com":    { score: 38, factCheck: 32, editorial: 42, transparency: 40, correction: 36 },

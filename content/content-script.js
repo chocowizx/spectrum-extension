@@ -292,6 +292,51 @@
     __lastArticleData = articleData;
     __videoSegments = (isYouTube && articleData.transcript && articleData.transcript.segments) ? articleData.transcript.segments : null;
     chrome.runtime.sendMessage({ type: "ARTICLE_DATA", data: articleData }).catch(function () {});
+
+    // DOM monitoring for stealth edits — watch article body for significant text changes
+    if (!isYouTube && !__domObserverActive) {
+      _startDomMonitor(articleData);
+    }
+  }
+
+  // ---- Stealth edit detection via DOM monitoring ----
+  var __domObserverActive = false;
+  var __domObserver = null;
+  var __domDebounceTimer = null;
+
+  function _startDomMonitor(originalData) {
+    var articleEl = document.querySelector("article, [role='main'], main, .article-body");
+    if (!articleEl) return;
+
+    var originalLength = (originalData.text || "").length;
+    __domObserverActive = true;
+
+    __domObserver = new MutationObserver(function () {
+      clearTimeout(__domDebounceTimer);
+      __domDebounceTimer = setTimeout(function () {
+        var currentText = (articleEl.innerText || "").trim();
+        var lengthDiff = Math.abs(currentText.length - originalLength);
+        // Only re-trigger if >10% of content changed
+        if (lengthDiff > originalLength * 0.1 && lengthDiff > 200) {
+          __domObserver.disconnect();
+          __domObserverActive = false;
+          // Re-extract and re-analyze
+          var extractor = typeof ArticleExtractor !== "undefined" ? ArticleExtractor : null;
+          if (extractor) {
+            var freshData = extractor.extract();
+            if (freshData && freshData.text && freshData.text.length > 200) {
+              freshData._stealthEdit = true;
+              freshData._originalLength = originalLength;
+              freshData._newLength = currentText.length;
+              __lastArticleData = freshData;
+              chrome.runtime.sendMessage({ type: "ARTICLE_DATA", data: freshData }).catch(function () {});
+            }
+          }
+        }
+      }, 5000); // 5s debounce to avoid thrashing during lazy-load
+    });
+
+    __domObserver.observe(articleEl, { childList: true, subtree: true, characterData: true });
   }
 
   // ============================================================
@@ -2007,6 +2052,86 @@
               'Translation bias: ' + mlData.translationBiasRisk +
               (mlData.translationBiasNote ? ' \u2014 ' + escapeHtml(mlData.translationBiasNote) : '') +
             '</div>' : '') +
+        '</div>';
+    }
+
+    // Bayesian Reputation (new April 2026)
+    var bayesData = analysis.bayesianReputation || null;
+    if (bayesData && typeof bayesData.posteriorScore === "number") {
+      var bayesDelta = bayesData.posteriorScore - (bayesData.priorScore || 0);
+      var bayesColor = bayesDelta > 5 ? "#22C55E" : bayesDelta < -5 ? "#EF4444" : "#94A3B8";
+      var bayesArrow = bayesDelta > 5 ? "\u2191" : bayesDelta < -5 ? "\u2193" : "\u2194";
+      html +=
+        '<div style="margin-bottom:10px;padding-bottom:10px;border-bottom:1px solid ' + BORDER + ';">' +
+          '<div style="font-size:12px;color:' + TEXT_FAINT + ';margin-bottom:4px;">Source Reputation (Bayesian)</div>' +
+          '<div style="display:flex;align-items:center;gap:8px;">' +
+            '<span style="font-size:13px;color:' + TEXT_MUTED + ';">Prior: ' + (bayesData.priorScore || "?") + '</span>' +
+            '<span style="font-size:15px;color:' + bayesColor + ';font-weight:700;">' + bayesArrow + ' ' + bayesData.posteriorScore + '</span>' +
+          '</div>' +
+          (bayesData.adjustmentReason ?
+            '<div style="font-size:11px;color:' + TEXT_FAINT + ';margin-top:3px;line-height:1.4;">' + escapeHtml(bayesData.adjustmentReason) + '</div>' : '') +
+        '</div>';
+    }
+
+    // Voice Diversity (new April 2026)
+    var vdData = analysis.voiceDiversity || null;
+    if (vdData && typeof vdData.diversityScore === "number") {
+      var vdColor = vdData.diversityScore >= 70 ? "#22C55E" : vdData.diversityScore >= 40 ? "#F59E0B" : "#EF4444";
+      var vdLabel = vdData.diversityScore >= 70 ? "Diverse" : vdData.diversityScore >= 40 ? "Limited" : "Narrow";
+      html +=
+        '<div style="margin-bottom:10px;padding-bottom:10px;border-bottom:1px solid ' + BORDER + ';">' +
+          '<div style="font-size:12px;color:' + TEXT_FAINT + ';margin-bottom:4px;">Voice Diversity</div>' +
+          '<div style="display:flex;align-items:center;gap:6px;">' +
+            '<div style="flex:1;height:5px;border-radius:3px;background:rgba(0,0,0,.06);position:relative;">' +
+              '<div style="height:100%;width:' + vdData.diversityScore + '%;border-radius:3px;background:' + vdColor + ';"></div>' +
+            '</div>' +
+            '<span style="font-size:13px;color:' + vdColor + ';font-weight:600;">' + vdLabel + '</span>' +
+          '</div>' +
+          '<div style="font-size:11px;color:' + TEXT_FAINT + ';margin-top:3px;">' +
+            (vdData.sourcesQuoted || 0) + ' sources quoted \u00B7 ' + (vdData.perspectiveBalance || "unknown") +
+          '</div>' +
+          (vdData.framingAuthority ?
+            '<div style="font-size:11px;color:' + TEXT_MUTED + ';margin-top:2px;font-style:italic;">' + escapeHtml(vdData.framingAuthority) + '</div>' : '') +
+        '</div>';
+    }
+
+    // TRUST Fact-Check (new April 2026)
+    var trustData = analysis.trustFactCheck || null;
+    if (trustData && trustData.claimsAnalyzed > 0) {
+      var trustVerified = trustData.verifiedTrue || 0;
+      var trustFalse = trustData.verifiedFalse || 0;
+      var trustUnverif = trustData.unverifiable || 0;
+      html +=
+        '<div style="margin-bottom:10px;padding-bottom:10px;border-bottom:1px solid ' + BORDER + ';">' +
+          '<div style="font-size:12px;color:' + TEXT_FAINT + ';margin-bottom:4px;">TRUST Fact-Check</div>' +
+          '<div style="display:flex;gap:8px;margin-bottom:4px;">' +
+            '<span style="font-size:12px;color:#22C55E;font-weight:600;">\u2713 ' + trustVerified + ' supported</span>' +
+            '<span style="font-size:12px;color:#EF4444;font-weight:600;">\u2717 ' + trustFalse + ' unsupported</span>' +
+            '<span style="font-size:12px;color:#94A3B8;font-weight:600;">? ' + trustUnverif + ' unverifiable</span>' +
+          '</div>' +
+          (trustData.claimDetails && trustData.claimDetails.length > 0 ?
+            trustData.claimDetails.slice(0, 3).map(function(cd) {
+              var cdColor = cd.verdict === "supported" ? "#22C55E" : cd.verdict === "unsupported" || cd.verdict === "misleading" ? "#EF4444" : "#F59E0B";
+              return '<div style="font-size:11px;color:' + TEXT_MUTED + ';margin-top:3px;padding-left:8px;border-left:2px solid ' + cdColor + ';">' +
+                escapeHtml((cd.claim || "").slice(0, 100)) +
+                ' <span style="color:' + cdColor + ';font-weight:600;">(' + (cd.verdict || "?") + ' \u00B7 ' + Math.round((cd.confidence || 0) * 100) + '%)</span>' +
+              '</div>';
+            }).join('') : '') +
+        '</div>';
+    }
+
+    // Content Edit Tracking (new April 2026)
+    var ctData = analysis.contentTracking || null;
+    if (ctData && (ctData.editSignsDetected || ctData.correctionNotice || ctData.developingStory)) {
+      var ctItems = [];
+      if (ctData.editSignsDetected) ctItems.push("Edit signs detected");
+      if (ctData.correctionNotice) ctItems.push("Correction notice (" + (ctData.correctionAdequacy || "?") + ")");
+      if (ctData.developingStory) ctItems.push("Developing story");
+      if (ctData.headlineChanged === "likely") ctItems.push("Headline likely changed");
+      html +=
+        '<div style="margin-bottom:10px;padding:6px 10px;border-radius:6px;background:rgba(251,191,36,0.06);border-left:2px solid #FBBF24;font-size:11px;color:#FBBF24;line-height:1.5;">' +
+          '\u270E ' + ctItems.join(' \u00B7 ') +
+          (ctData.freshnessAssessment ? '<div style="color:' + TEXT_FAINT + ';margin-top:2px;">' + escapeHtml(ctData.freshnessAssessment) + '</div>' : '') +
         '</div>';
     }
 
