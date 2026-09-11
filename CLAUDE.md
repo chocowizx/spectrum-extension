@@ -52,11 +52,37 @@ verified this returns results up to 8 km off. This is not a preference.
 Rules:
 1. All POI lookups, geocoding, and around-search go through the `amap` MCP server.
 2. Amap uses **GCJ-02** coordinates in **`lng,lat`** order. Not WGS-84. Not `lat,lng`. Getting this wrong silently returns a plausible-looking wrong place.
-3. If the `amap` server is **not connected**, say so and stop. Do not fall back to Google, OpenStreetMap, or recall. Tell me to run:
-   ```
-   claude mcp add --transport http amap "https://mcp.amap.com/mcp?key=KEY"
-   ```
+3. If the `amap` server is **not connected**, say so and stop. Do not fall back to Google, OpenStreetMap, or recall. See "Activating it" below.
 4. Amap gives location, category, hours, and phone. It does **not** give trustworthy quality signals. Quality always gets the §1 rule-7 treatment.
+
+### Activating it
+
+`.mcp.json` in this folder already declares the server. The key is **not** in
+git — it comes from the environment:
+
+```bash
+export AMAP_MAPS_API_KEY=...        # add to ~/.zshrc or ~/.bashrc to persist
+```
+
+Then restart Claude Code in this folder and check `/mcp`. Equivalent one-off:
+
+```bash
+claude mcp add --transport http amap "https://mcp.amap.com/mcp?key=KEY"
+```
+
+Getting a key: <https://lbs.amap.com/api/webservice/create-project-and-key>.
+Create an application, then add a key of type **Web服务 (Web fúwù)** — the web
+service key, not the JS API key. Amap developer accounts generally require a
+Chinese mobile number and 实名认证 (shímíng rènzhèng) real-name verification —
+verify current rules, and the girlfriend's family can help if it's a blocker.
+
+### Where this will NOT work
+
+Claude Code **on the web / in a remote cloud container** cannot reach Amap —
+the environment's network policy returns `403 CONNECT` for both
+`mcp.amap.com` and `restapi.amap.com`. Confirmed 2026-09. In a remote session,
+say so immediately rather than debugging the key. **POI work has to happen in
+a local session.**
 
 ### Distance math at this latitude (39.93°N)
 - 1° latitude ≈ 111.0 km
@@ -173,7 +199,7 @@ Ready-to-read counter line:
 
 Standing list. When one gets resolved in a session, update this file.
 
-- [ ] Home coords `116.8205,39.9295` have **not** been reverse-geocoded against Amap yet — the `amap` server was not connected at setup. Confirm they land on 燕达东方广场 before trusting any distance in this file.
+- [ ] Home coords `116.8205,39.9295` have **not** been reverse-geocoded against Amap yet — no key was available at setup, and the remote container that wrote this file is network-blocked from Amap. **Do this first in a local session.** Confirm they land on 燕达东方广场 before trusting any distance in this file.
 - [ ] Current 白庙检查站 (Báimiào Jiǎncházhàn) delay pattern by time of day.
 - [ ] Whether the family car is Hebei- or Beijing-plated, and their 进京证 (jìnjīngzhèng) situation.
 - [ ] 燕郊站 (Yānjiāo Zhàn) current service pattern into Beijing.
