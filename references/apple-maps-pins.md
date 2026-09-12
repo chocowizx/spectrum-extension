@@ -21,6 +21,8 @@ Then tap each link below → **Add to Guide**. Two minutes for all twelve.
 | 11 | **方砖厂69号炸酱面 (Fāngzhuānchǎng 69 hào)** — Fangzhuanchang 69 | 炸酱面 (zhájiàngmiàn). Michelin Bib Gourmand 2020–2026. **The 叔叔 conversation opener.** | [open](https://maps.apple.com/?q=%E6%96%B9%E7%A0%96%E5%8E%8269%E5%8F%B7%E7%82%B8%E9%85%B1%E9%9D%A2) |
 | 12 | **北京稻香村 (Běijīng Dàoxiāngcūn)** — Beijing Daoxiangcun | ⏰ **月饼 (yuèbǐng) mooncakes — needed before 25 Sep.** The 老字号 Beijingers actually buy. | [open](https://maps.apple.com/?q=%E5%8C%97%E4%BA%AC%E7%A8%BB%E9%A6%99%E6%9D%91) |
 
+| 13 | **王府世纪大厦 (Wángfǔ Shìjì Dàshà)** — Wangfu Century Building | 汉服妆造 (hànfú zhuāngzào) mega-cluster, 500+ studios, 东安门大街55号. **Go to upper floors.** | [open](https://maps.apple.com/?q=%E7%8E%8B%E5%BA%9C%E4%B8%96%E7%BA%AA%E5%A4%A7%E5%8E%A6) |
+
 ## Guide names worth splitting
 
 | Guide | Contents |

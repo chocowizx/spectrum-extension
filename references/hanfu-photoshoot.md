@@ -79,11 +79,43 @@ The documented pattern is **低价引流 (dījià yǐnliú)** — a cheap headli
 that pulls you in, then accessories, props, retouching and overtime are billed
 on top. A quote that doesn't answer the eight questions above is not a quote.
 
-## Where the studios are
+## Where the studios are — the building, not the neighbourhood
 
-Clustered around [景山公园 (Jǐngshān Gōngyuán)](https://maps.apple.com/?q=%E6%99%AF%E5%B1%B1%E5%85%AC%E5%9B%AD) and the streets east
-and north of the palace, plus [南锣鼓巷 (Nánluógǔxiàng)](https://maps.apple.com/?q=%E5%8D%97%E9%94%A3%E9%BC%93%E5%B7%B7) and
-[什刹海 (Shíchàhǎi)](https://maps.apple.com/?q=%E4%BB%80%E5%88%B9%E6%B5%B7).
+**[王府世纪大厦 (Wángfǔ Shìjì Dàshà)](https://maps.apple.com/?q=%E7%8E%8B%E5%BA%9C%E4%B8%96%E7%BA%AA%E5%A4%A7%E5%8E%A6) — 东安门大街55号 (Dōng'ānmén Dàjiē
+55 hào).** Southeast of the palace, west of 王府井 (Wángfǔjǐng), at the north
+end of 南池子大街 (Nánchízǐ Dàjiē). ~15 min walk from the Forbidden City.
+
+**Reportedly 500+ 古装摄影 (gǔzhuāng shèyǐng) studios stacked in one tower.**
+This is the market, not the 景山 (Jǐngshān) area — an earlier version of this
+file pointed north and that was wrong.
+
+### Strategy for a 500-shop building
+
+1. **Go up, not in.** Lower floors get the walk-in traffic and run at churn
+   pace. Upper floors are reported quieter, with a more relaxed dressing and
+   makeup session. Same building, better experience.
+2. **Compare three or four before committing.** They are in direct competition
+   across a single lobby — this is the one situation where walk-in beats
+   online booking on price.
+3. **Negotiate.** With that much supply under one roof, the posted price is an
+   opening position.
+4. Then run the eight-question checklist below on whoever she likes.
+
+### Directory listings in that building
+
+**These are map-directory entries confirming the shops exist. They are NOT
+endorsements — I have no review data on any of them.** Use as starting doors.
+
+| Studio | Floor |
+|---|---|
+| 汉宫记古装摄影 (Hàngōngjì Gǔzhuāng Shèyǐng) | 7F, 720A |
+| 青衫忆古装摄影·格格服 (Qīngshānyì Gǔzhuāng Shèyǐng · Gégéfú) | 6F, 617B |
+| 锦绣宫汉服清宫服妆造体验 (Jǐnxiùgōng Hànfú Qīnggōngfú Zhuāngzào Tǐyàn) | 3F, 320 |
+| 时光忆古装摄影 (Shíguāngyì Gǔzhuāng Shèyǐng) | 3F, 306A-1 |
+
+**Benchmark to beat:** ~¥298 for rental + hair + makeup + accessories, with an
+~¥800 refundable 押金 (yājīn). If a shop opens above that with less included,
+walk to the next door.
 
 ## ⏰ Timing — book now
 
