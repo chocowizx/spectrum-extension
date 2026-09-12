@@ -10,10 +10,10 @@ Find places. Amap first, always. Output is a table, not prose.
 ## Two modes — pick one, say which you're using
 
 ### Mode A — `amap` MCP connected
-Full pipeline, Steps 1–6 below. Use whenever the server is available.
+Full pipeline, Steps 1–6 below. **Not currently active** — the key is deferred.
 
-### Mode B — manual input (no key needed)
-**Use this when `amap` is not connected.** Do NOT stop and do NOT fall back to
+### Mode B — manual input (no key needed) ← **CURRENT DEFAULT**
+**This is the standing mode.** Run it without comment; don't re-pitch the key. Do NOT stop and do NOT fall back to
 Google, OpenStreetMap, or recall — non-Amap POI data for China is wrong here,
 verified 8 km off. Instead, have the user do the *search* step on their phone
 and do everything else yourself.

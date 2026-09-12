@@ -52,7 +52,12 @@ verified this returns results up to 8 km off. This is not a preference.
 Rules:
 1. All POI lookups, geocoding, and around-search go through the `amap` MCP server.
 2. Amap uses **GCJ-02** coordinates in **`lng,lat`** order. Not WGS-84. Not `lat,lng`. Getting this wrong silently returns a plausible-looking wrong place.
-3. If the `amap` server is **not connected**, say so — then switch to `scout` **Mode B** (manual input: I look the place up in Apple Maps or 高德地图 (Gāodé Dìtú) and paste you the name and coords; you do everything else). Never fall back to Google, OpenStreetMap, or recall. See "Activating it" below.
+3. **CURRENT DEFAULT: Mode B (Apple Maps).** I have deferred the Amap key. Run
+   `scout` in Mode B — I look places up in Apple Maps on my phone and paste you
+   the name and coords; you do distance, crossing flag, time, taxi phrase,
+   pricing. **Do not ask me to set up the key each session.** Mention it only if
+   I ask, or if a task genuinely cannot be done without search. Never fall back
+   to Google, OpenStreetMap, or recall.
 4. Amap gives location, category, hours, and phone. It does **not** give trustworthy quality signals. Quality always gets the §1 rule-7 treatment.
 
 ### Activating it
@@ -211,7 +216,7 @@ Ready-to-read counter line:
 
 Standing list. When one gets resolved in a session, update this file.
 
-- [ ] Home coords `116.8205,39.9295` have **not** been reverse-geocoded against Amap yet — no key was available at setup, and the remote container that wrote this file is network-blocked from Amap. **Do this first in a local session.** Confirm they land on 燕达东方广场 before trusting any distance in this file.
+- [ ] Home coords `116.8205,39.9295` are **unverified**. Amap key deferred. **Ask once for an Apple Maps pin on his front door**, then treat as confirmed and stop flagging it.
 - [ ] Current 白庙检查站 (Báimiào Jiǎncházhàn) delay pattern by time of day.
 - [ ] Whether the family car is Hebei- or Beijing-plated, and their 进京证 (jìnjīngzhèng) situation.
 - [ ] 燕郊站 (Yānjiāo Zhàn) current service pattern into Beijing.
