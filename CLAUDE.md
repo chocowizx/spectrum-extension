@@ -21,7 +21,8 @@ These are not stylistic preferences. Breaking them makes the answer unusable.
 | 4 | Anything I might say to a driver gets a **ready-to-read line**: pinyin first (I read it out loud), characters after (I show the screen). |
 | 5 | Prices in **RMB with rough KRW**. State the rate used. Working rate: **¥1 ≈ ₩195** — re-verify if the number matters. |
 | 6 | **Concise. Tables over prose. No preamble.** Do not open with "Great question" or restate my request back to me. |
-| 7 | **Say when you don't know.** 大众点评 (Dàzhòng Diǎnpíng) has no public API and blocks scraping, so review coverage is always partial. Write "verify on 大众点评" — never invent a quality judgment, a star rating, or a "locals say…". |
+| 7 | **Always give a link.** Every place gets an Apple Maps link, formatted `https://maps.apple.com/?q=<url-encoded Chinese name>`. Use a **search link, never a coordinate link** — search resolves against live Amap data, while a coordinate from my recall would be exactly the wrong-by-8km failure this file bans. |
+| 8 | **Say when you don't know.** 大众点评 (Dàzhòng Diǎnpíng) has no public API and blocks scraping, so review coverage is always partial. Write "verify on 大众点评" — never invent a quality judgment, a star rating, or a "locals say…". |
 
 ### Pinyin rule — edge cases
 - Applies to dish names on a menu, pharmacy drug names, brand names, station names, and neighborhood names.
@@ -231,3 +232,9 @@ Standing list. When one gets resolved in a session, update this file.
 |---|---|
 | `scout` | "What's near me", "find me a place", "where can I get X". **Mode A** (amap connected): around-search → POI detail → web check → table. **Mode B** (no key): I paste a name / Apple Maps link / coords, you do distance, crossing flag, time, taxi phrase, pricing. |
 | `phrase` | I describe a social situation → likely expressions / response / meaning table. |
+
+### Reference files — load on demand, don't re-derive
+
+| File | Covers |
+|---|---|
+| `references/beijing-gugong.md` | 故宫博物院 (Gùgōng Bówùyuàn) the Forbidden City — gate rules (东华门 is exit-only), mandatory advance booking, washrooms, cafés, food outside, 景山 (Jǐngshān), phrases, ride home. Read it before answering anything about the Forbidden City or its surroundings. |
