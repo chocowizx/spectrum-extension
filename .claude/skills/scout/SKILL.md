@@ -1,32 +1,58 @@
 ---
 name: scout
-description: Find places near 燕郊 (Yānjiāo) / northern China using the Amap MCP server. Use when the user asks what's near them, asks you to find or recommend a place (restaurant, pharmacy, gift shop, cafe, hospital, shop, station), asks "where can I get X", asks what's around a coordinate or landmark, or asks to compare options by distance or travel time. Runs Amap around-search, pulls POI detail, web-checks each shortlisted name, and returns a distance/time/taxi-phrase table.
+description: Find places near 燕郊 (Yānjiāo) / northern China using the Amap MCP server. Use when the user asks what's near them, asks you to find or recommend a place (restaurant, pharmacy, gift shop, cafe, hospital, shop, station), asks "where can I get X", asks what's around a coordinate or landmark, or asks to compare options by distance or travel time. Runs Amap around-search, pulls POI detail, web-checks each shortlisted name, and returns a distance/time/taxi-phrase table. Also handles the case where Amap is unavailable by taking place names, pasted Apple Maps links, or coordinates from the user and doing everything else.
 ---
 
 # Scout
 
 Find places. Amap first, always. Output is a table, not prose.
 
-## Preconditions — check before anything else
+## Two modes — pick one, say which you're using
 
-1. **The `amap` MCP server must be connected.** If it is not, stop and tell the user to run:
-   ```
-   claude mcp add --transport http amap "https://mcp.amap.com/mcp?key=KEY"
-   ```
-   **Do not fall back to Google, OpenStreetMap, or recall.** Non-Amap POI data
-   for China is wrong here — verified 8 km off. A wrong answer is worse than no
-   answer. Stop means stop.
+### Mode A — `amap` MCP connected
+Full pipeline, Steps 1–6 below. Use whenever the server is available.
 
-2. **Coordinates: GCJ-02, `lng,lat` order.** Not WGS-84, not `lat,lng`. Getting
-   this wrong returns a plausible-looking wrong place with no error.
+### Mode B — manual input (no key needed)
+**Use this when `amap` is not connected.** Do NOT stop and do NOT fall back to
+Google, OpenStreetMap, or recall — non-Amap POI data for China is wrong here,
+verified 8 km off. Instead, have the user do the *search* step on their phone
+and do everything else yourself.
 
-3. **Origin** = the user's home coords `116.8205,39.9295` unless they name a
-   different start point. If they give a landmark instead of coords, geocode it
-   through Amap first — don't guess.
+Ask for this, once, in one line:
+
+> Look it up in **Apple Maps** (Amap data, English interface, works in CN with
+> no account) or 高德地图 (Gāodé Dìtú). Tap the place → Share → copy the link,
+> or long-press to drop a pin and copy the coordinates. Paste me the name and
+> the link/coords — 2–5 candidates if you want a comparison.
+
+Then run **Steps 3–6 unchanged**. Everything that makes this skill useful —
+distance, travel time, the crossing flag, the taxi phrase, pricing, the
+review-coverage caveat — works fine on user-supplied coordinates. The only
+thing the key buys is doing Step 1 for them.
+
+**Parsing an Apple Maps share link:**
+- Format: `https://maps.apple.com/?ll=39.9295,116.8205&q=Name`
+- ⚠️ **`ll` is `lat,lng` — the OPPOSITE of Amap's `lng,lat`.** Swap it before
+  doing any distance math or the answer is silently wrong.
+- Apple Maps renders GCJ-02 in mainland China, so a copied pin *should* already
+  be GCJ-02 and directly comparable to the home coords. **This is unverified** —
+  the first time, sanity-check one known landmark and say you're doing so. If a
+  distance comes out absurd, datum mismatch is the first suspect.
+
+Say at the top of the output which mode produced it.
+
+## Other preconditions
+
+1. **Coordinates: GCJ-02, `lng,lat` order** for anything Amap touches. Not
+   WGS-84, not `lat,lng`. Getting this wrong returns a plausible-looking wrong
+   place with no error.
+2. **Origin** = the user's home coords `116.8205,39.9295` unless they name a
+   different start point. In Mode A, geocode a named landmark through Amap —
+   don't guess. In Mode B, ask them to drop a pin on it.
 
 ## Workflow
 
-### Step 1 — Amap around-search
+### Step 1 — Amap around-search *(Mode A only)*
 Search from the origin. Start with a radius appropriate to the category:
 
 | Category | Start radius | Note |
@@ -39,7 +65,7 @@ Search from the origin. Start with a radius appropriate to the category:
 Widen only if the first pass is thin, and **say that you widened it**. Prefer
 a good close option over a marginally better far one, and say why.
 
-### Step 2 — POI detail on the top candidates
+### Step 2 — POI detail on the top candidates *(Mode A only)*
 Take the top ~5 and pull Amap POI detail: exact address, category, hours,
 phone, coordinates. Drop anything that is permanently closed, is a duplicate
 listing, or is obviously the wrong category. Shortlist to 3–5.

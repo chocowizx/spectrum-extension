@@ -35,7 +35,7 @@ These are not stylistic preferences. Breaking them makes the answer unusable.
 | Constraint | Consequence for your answers |
 |---|---|
 | **No Chinese driver's license** | Never recommend self-drive, car rental, or scooter rental. Ever. |
-| **No VPN assumed** | If a service is blocked or degraded in mainland CN, say so inline. Assume Google Maps/Search, WhatsApp, Instagram, X, YouTube, Gmail are unavailable. KakaoTalk and Naver are partially blocked/throttled and the status shifts — flag as "verify, changes often". Apple Maps works (it runs Amap data). Bing works. |
+| **No VPN assumed** | If a service is blocked or degraded in mainland CN, say so inline. Assume Google Maps/Search, WhatsApp, Instagram, X, YouTube, Gmail are unavailable. KakaoTalk and Naver are partially blocked/throttled and the status shifts — flag as "verify, changes often". **Apple Maps works and is my best no-setup option** — Amap data, English interface, no account needed. Bing works. |
 | **Payment: Alipay 支付宝 (Zhīfùbǎo)** | Assume Alipay for everything. Flag any place likely to be cash-only or WeChat-Pay-only. Do not suggest foreign cards will work. |
 | **POI data: Amap only** | See §3. This is the most important constraint in this file. |
 
@@ -52,7 +52,7 @@ verified this returns results up to 8 km off. This is not a preference.
 Rules:
 1. All POI lookups, geocoding, and around-search go through the `amap` MCP server.
 2. Amap uses **GCJ-02** coordinates in **`lng,lat`** order. Not WGS-84. Not `lat,lng`. Getting this wrong silently returns a plausible-looking wrong place.
-3. If the `amap` server is **not connected**, say so and stop. Do not fall back to Google, OpenStreetMap, or recall. See "Activating it" below.
+3. If the `amap` server is **not connected**, say so — then switch to `scout` **Mode B** (manual input: I look the place up in Apple Maps or 高德地图 (Gāodé Dìtú) and paste you the name and coords; you do everything else). Never fall back to Google, OpenStreetMap, or recall. See "Activating it" below.
 4. Amap gives location, category, hours, and phone. It does **not** give trustworthy quality signals. Quality always gets the §1 rule-7 treatment.
 
 ### Activating it
@@ -83,6 +83,18 @@ the environment's network policy returns `403 CONNECT` for both
 `mcp.amap.com` and `restapi.amap.com`. Confirmed 2026-09. In a remote session,
 say so immediately rather than debugging the key. **POI work has to happen in
 a local session.**
+
+### Apple Maps as the no-key fallback
+
+Considered and rejected as an *API*: the Apple Maps Server API needs a paid
+Apple Developer Program membership and ES256 JWT signing, and two things are
+unverified — whether the Server API covers mainland-China POI search at all,
+and what coordinate datum it returns for China. A silent WGS-84/GCJ-02
+mismatch is the exact failure this whole file exists to prevent.
+
+Apple Maps *the app on my phone* is a different story and is the sanctioned
+Mode B source: Amap data, English interface, no account. Share-link coords are
+`ll=lat,lng` — **the opposite order from Amap**. Swap before any math.
 
 ### Distance math at this latitude (39.93°N)
 - 1° latitude ≈ 111.0 km
@@ -212,5 +224,5 @@ Standing list. When one gets resolved in a session, update this file.
 
 | Skill | Trigger |
 |---|---|
-| `scout` | "What's near me", "find me a place", "where can I get X" — Amap around-search → POI detail → web check → table. |
+| `scout` | "What's near me", "find me a place", "where can I get X". **Mode A** (amap connected): around-search → POI detail → web check → table. **Mode B** (no key): I paste a name / Apple Maps link / coords, you do distance, crossing flag, time, taxi phrase, pricing. |
 | `phrase` | I describe a social situation → likely expressions / response / meaning table. |
