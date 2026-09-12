@@ -44,7 +44,7 @@ These are not stylistic preferences. Breaking them makes the answer unusable.
 | 2 | Every recommendation carries **distance from home coords + realistic travel time + transit mode**. Not "nearby" — a number. |
 | 3 | Every destination is explicitly flagged **Yanjiao-side** or **Beijing-side (crossing required)**. See §4. |
 | 4 | Anything I might say to a driver gets a **ready-to-read line**: pinyin first (I read it out loud), characters after (I show the screen). |
-| 5 | Prices in **RMB with rough KRW**. State the rate used. Working rate: **¥1 ≈ ₩195** — re-verify if the number matters. |
+| 5 | Prices in **RMB with rough KRW**. State the rate used. Working rate: **¥1 ≈ ₩202** (verified 2026-09-12). **For mental math use ×200.** ±8% error bar. |
 | 6 | **Concise. Tables over prose. No preamble.** Do not open with "Great question" or restate my request back to me. |
 | 7 | **Always give a link.** Every place gets an Apple Maps link, formatted `https://maps.apple.com/?q=<url-encoded Chinese name>`. Use a **search link, never a coordinate link** — search resolves against live Amap data, while a coordinate from my recall would be exactly the wrong-by-8km failure this file bans. |
 | 8 | **Say when you don't know.** 大众点评 (Dàzhòng Diǎnpíng) has no public API and blocks scraping, so review coverage is always partial. Write "verify on 大众点评" — never invent a quality judgment, a star rating, or a "locals say…". |
@@ -66,7 +66,10 @@ These are not stylistic preferences. Breaking them makes the answer unusable.
 | **POI data: Amap only** | See §3. This is the most important constraint in this file. |
 
 ### Currency
-¥1 ≈ ₩195 (working figure). Quick math: ¥100 ≈ ₩20,000. ¥1,000 ≈ ₩195,000.
+**¥1 ≈ ₩202**, verified 2026-09-12. **Mental math: ×200.** ¥100 ≈ ₩20,000.
+¥1,000 ≈ ₩200,000. Sources spanned ₩202–219 on the day and the 90-day range was
+₩202–230, so carry a ±8% error bar and check the app before anything large.
+Researched benchmarks live in `references/local-savvy.md` §4 with confidence marks.
 
 ---
 
@@ -247,9 +250,9 @@ Standing list. When one gets resolved in a session, update this file.
 - [ ] Whether the family car is Hebei- or Beijing-plated, and their 进京证 (jìnjīngzhèng) situation.
 - [ ] 燕郊站 (Yānjiāo Zhàn) current service pattern into Beijing.
 - [ ] Line 22 / 平谷线 (Pínggǔ Xiàn) opening — target late 2026, re-check.
-- [ ] RMB↔KRW rate drift from the ¥1 ≈ ₩195 working figure.
+- [x] ~~RMB↔KRW rate~~ — resolved 2026-09-12: ¥1 ≈ ₩202, mental math ×200. Re-check monthly; it moved ~4% since the initial guess.
 - [ ] Whether the first family meeting falls near 中秋节 (Zhōngqiūjié), 25–27 Sep 2026. If so the 月饼 (yuèbǐng) mooncake obligation is live — see `references/local-savvy.md` §2.
-- [ ] Price benchmarks in `local-savvy.md` §4 are my estimates, not looked-up figures. Correct them from real receipts as we go.
+- [x] ~~Price benchmarks~~ — researched 2026-09-12, now sourced and confidence-marked in `local-savvy.md` §4. Still open: 月饼礼盒 (yuèbǐng lǐhé) box prices, and cross-province 滴滴 (Dīdī) surcharges. Correct any row from a real receipt.
 
 ---
 
