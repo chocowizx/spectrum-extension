@@ -268,4 +268,5 @@ Standing list. When one gets resolved in a session, update this file.
 | File | Covers |
 |---|---|
 | `references/local-savvy.md` | **Read this before every recommendation.** Holiday calendar and the obligations it creates, tourist traps by name, scam patterns, price benchmarks, the local daily rhythm, foreigner-specific failure modes, and the small signals that mark a resident rather than a tourist. Keep it current. |
+| `references/apple-maps-pins.md` | The running tap-list of every place worth pinning, as Apple Maps search links in add-order. **Apple Maps has no bulk import and no write API** — Guides are populated by hand, so append new places here rather than re-deriving the list. |
 | `references/beijing-gugong.md` | 故宫博物院 (Gùgōng Bówùyuàn) the Forbidden City — gate rules (东华门 is exit-only), mandatory passport booking, food outside, 景山 (Jǐngshān), phrases, ride home. **The facilities section is low priority — he has a guide for that.** |
