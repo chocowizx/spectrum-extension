@@ -1,8 +1,0 @@
-{
-  "mcpServers": {
-    "amap": {
-      "type": "http",
-      "url": "https://mcp.amap.com/mcp?key=${AMAP_MAPS_API_KEY}"
-    }
-  }
-}
